@@ -1,0 +1,7 @@
+/.env
+/.ipynb_checkpoints
+/conda_bullshit_requirements.txt
+/data.csv
+/fundamental.csv
+/gridsearch.py
+/simfin_data
