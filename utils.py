@@ -1,4 +1,6 @@
 import pandas as pd
+import seaborn as sns
+import simfin as sf
 
 
 def compare_feature_imp_corr(estimator, df, target_name):
@@ -29,3 +31,21 @@ def compare_feature_imp_corr(estimator, df, target_name):
                            ascending=False, inplace=True)
 
     return df_compare
+
+
+def plot_correlation(model, X, y):
+
+    model.fit(X, y)
+    y_pred = model.predict(X)
+
+    pred_df = pd.concat([y.reset_index(),
+                         pd.Series(y_pred, name='Predicted Close')
+                         ], axis=1)
+
+    g = sns.scatterplot(data=sf.winsorize(pred_df[['Ticker', 'Close', 'Predicted Close']].groupby(
+        'Ticker').mean(), clip=False, quantile=.005), x='Close', y='Predicted Close')
+
+    text = (
+        f"Correlation: {pred_df[['Ticker', 'Close', 'Predicted Close']].groupby('Ticker').mean().corr().values[0][1]:.2%}")
+
+    g.set_title(text)

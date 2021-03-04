@@ -1,5 +1,6 @@
 /.env
 /.ipynb_checkpoints
+*.pyc
 /conda_bullshit_requirements.txt
 /data.csv
 /fundamental.csv
