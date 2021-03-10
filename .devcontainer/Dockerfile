@@ -18,3 +18,5 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get -y install gcc
 
 RUN pip install -r requirements.txt
+# RUN conda update -n base conda -y
+# RUN conda update -all -y
