@@ -11,9 +11,8 @@ import pathlib
 import os
 from dotenv import load_dotenv
 
-
 load_dotenv()
-SIMFIN_API_KEY = os.getenv('SIMFIN_API_KEY')
+SIMFIN_API_KEY = os.getenv('SIMFIN_API_KEY', 'free')
 MODELS_DIR = pathlib.Path('./models')
 DATA_DIR = pathlib.Path('./data')
 
