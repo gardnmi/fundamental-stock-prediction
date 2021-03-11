@@ -16,8 +16,6 @@ SIMFIN_API_KEY = os.getenv('SIMFIN_API_KEY', 'free')
 MODELS_DIR = pathlib.Path('./models')
 DATA_DIR = pathlib.Path('./data')
 
-print(f'############## THIS IS THE KEY: {SIMFIN_API_KEY}')
-
 
 def train(df, winsor_quantile, model_name, feature_name, model_input):
 
@@ -52,7 +50,7 @@ def predict(model, df, filename):
 
     df['Predicted Close'] = model.predict(X)
 
-    df['Predicted Close'].to_csv(DATA_DIR/f'{filename}.csv')
+    df[['Close', 'Predicted Close']].to_csv(DATA_DIR/f'{filename}.csv')
 
     return df
 

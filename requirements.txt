@@ -4,3 +4,4 @@ shap==0.37.0
 simfin==0.8.1
 xgboost==1.3.3
 yfinance==0.1.55
+streamlit==0.78.0

@@ -17,3 +17,9 @@
 ## github actions
 - https://canovasjm.netlify.app/2020/11/29/github-actions-run-a-python-script-on-schedule-and-commit-changes/
 - https://github.com/canovasjm/covid-19-san-juan
+
+## machine learning
+- https://www.kaggle.com/serigne/stacked-regressions-top-4-on-leaderboard
+- https://medium.com/@benjamin.phillips22/simple-regression-with-neural-networks-in-pytorch-313f06910379
+- https://github.com/skorch-dev/skorch
+- https://machinelearningmastery.com/avoid-overfitting-by-early-stopping-with-xgboost-in-python/
