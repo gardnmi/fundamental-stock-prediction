@@ -13,8 +13,6 @@ def load_dataset(refresh_days=1, dataset='common', thresh=0.7, simfin_api_key='f
     # Used by all datasets
     shareprices_df = sf.load_shareprices(
         variant='daily', market='us', refresh_days=refresh_days)
-    # company_df = sf.load_companies(market='us', refresh_days=refresh_days)
-    # industry_df = sf.load_industries(refresh_days=refresh_days)
 
     if dataset == 'common':
 
