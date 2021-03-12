@@ -95,7 +95,7 @@ company_df = sf.load_companies(market='us', refresh_days=1)
 industry_df = sf.load_industries(refresh_days=1)
 
 company_df.to_csv(DATA_DIR/'company.csv')
-company_df.to_csv(DATA_DIR/'industry.csv')
+industry_df.to_csv(DATA_DIR/'industry.csv')
 
 # TRAIN
 common_model = train(common_df,
