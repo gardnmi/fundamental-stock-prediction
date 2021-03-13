@@ -17,7 +17,8 @@ MODELS_DIR = pathlib.Path('./models')
 DATA_DIR = pathlib.Path('./data')
 
 
-def train(df, winsor_quantile, model_name, feature_name, model_input):
+def train(df, winsor_quantile, model_name, feature_name, param):
+    df = df.copy()
 
     # Filter Dataset to current Stock Prices Only
     model_df = df[df.index.get_level_values(
@@ -32,7 +33,7 @@ def train(df, winsor_quantile, model_name, feature_name, model_input):
     y = model_df['Close']
 
     # Fit Model
-    model = XGBRegressor(kwargs=model_input)
+    model = XGBRegressor(**param)
     model.fit(X, y)
 
     # Save the Model
@@ -45,6 +46,7 @@ def train(df, winsor_quantile, model_name, feature_name, model_input):
 
 
 def predict(model, df, filename):
+    df = df.copy()
 
     X = df.drop(columns=['Close', 'Dataset'])
 
@@ -56,6 +58,8 @@ def predict(model, df, filename):
 
 
 def predict_similiar(model, df, filename, number_of_features=15):
+    df = df.copy()
+
     X = df.drop(columns=['Close', 'Dataset', 'Predicted Close'])
 
     # Filter Dataset to current Stock Prices Only
@@ -76,6 +80,8 @@ def predict_similiar(model, df, filename, number_of_features=15):
 
 
 def model_explainer(model, df):
+    df = df.copy()
+
     X = df.drop(columns=['Close', 'Dataset', 'Predicted Close'])
 
     # Filter Dataset to current Stock Prices Only
@@ -102,34 +108,34 @@ common_model = train(common_df,
                      winsor_quantile=0.01,
                      model_name='common_model',
                      feature_name='common',
-                     model_input=dict(learning_rate=0.01,
-                                      max_depth=2,
-                                      subsample=.5,
-                                      colsample_bylevel=0.7,
-                                      colsample_bytree=0.7,
-                                      n_estimators=210))
+                     param=dict(learning_rate=0.01,
+                                max_depth=2,
+                                subsample=.5,
+                                colsample_bylevel=0.7,
+                                colsample_bytree=0.7,
+                                n_estimators=210))
 
 banks_model = train(banks_df,
                     winsor_quantile=0.05,
                     model_name='banks_model',
                     feature_name='banks',
-                    model_input=dict(learning_rate=0.01,
-                                     max_depth=2,
-                                     subsample=.8,
-                                     colsample_bylevel=0.7,
-                                     colsample_bytree=0.7,
-                                     n_estimators=200))
+                    param=dict(learning_rate=0.01,
+                               max_depth=2,
+                               subsample=.8,
+                               colsample_bylevel=0.7,
+                               colsample_bytree=0.7,
+                               n_estimators=200))
 
 insurance_model = train(insurance_df,
                         winsor_quantile=0.08,
                         model_name='insurance_model',
                         feature_name='insurance',
-                        model_input=dict(learning_rate=0.01,
-                                         max_depth=2,
-                                         subsample=1,
-                                         colsample_bylevel=0.7,
-                                         colsample_bytree=0.7,
-                                         n_estimators=150))
+                        param=dict(learning_rate=0.01,
+                                   max_depth=2,
+                                   subsample=1,
+                                   colsample_bylevel=0.7,
+                                   colsample_bytree=0.7,
+                                   n_estimators=150))
 
 # PREDICT
 common_df = predict(common_model, common_df, 'common_predictions')
@@ -139,6 +145,8 @@ insurance_df = predict(insurance_model, insurance_df, 'insurance_predictions')
 # PREDICT SIMILIAR STOCKS
 common_matrix_df = predict_similiar(
     common_model, common_df, 'common_sim_matrix')
+
 banks_matrix_df = predict_similiar(banks_model, banks_df, 'banks_sim_matrix')
+
 insurance_matrix_df = predict_similiar(
     insurance_model, insurance_df, 'insurance_sim_matrix')

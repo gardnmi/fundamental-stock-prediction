@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import streamlit as st
 import yfinance as yf
 import pickle
@@ -20,12 +21,13 @@ def get_data():
         DATA_DIR/'insurance_features.csv', index_col=['Ticker'])
 
     # PREDICTIONS
-    common_pred_df = pd.read_csv(
-        DATA_DIR/'banks_predictions.csv', index_col=['Ticker', 'Date'])
-    banks_pred_df = pd.read_csv(
-        DATA_DIR/'banks_predictions.csv', index_col=['Ticker', 'Date'])
-    insurance_pred_df = pd.read_csv(
-        DATA_DIR/'banks_predictions.csv', index_col=['Ticker', 'Date'])
+    dfs = []
+    for sector in ['common', 'banks', 'insurance']:
+        df = pd.read_csv(
+            DATA_DIR/f'{sector}_predictions.csv', index_col=['Ticker', 'Date'], parse_dates=['Date'])
+        dfs.append(df)
+
+    prediction_df = pd.concat(dfs)
 
     # SIMILARITY MATRIX
     common_sim_df = pd.read_csv(
@@ -35,28 +37,28 @@ def get_data():
     insurance_sim_df = pd.read_csv(
         DATA_DIR/'insurance_sim_matrix.csv', index_col=['Ticker'])
 
+    # TICKERS
+    tickers = np.concatenate(
+        (common_features_df.index, banks_features_df.index, insurance_features_df.index))
+
     data_dict = {
-        'Common': {
-            'Features': common_features_df,
-            'Predictions': common_pred_df,
-            'Matrix': common_sim_df
+        'Predictions': prediction_df,
+        'Features': {
+            'Common': common_features_df,
+            'Banks': banks_features_df,
+            'Insurance': insurance_features_df
         },
-        'Banks': {
-            'Features': banks_features_df,
-            'Predictions': banks_pred_df,
-            'Matrix': banks_sim_df
+        'Similarity': {
+            'Common': common_sim_df,
+            'Banks': banks_sim_df,
+            'Insurance': insurance_sim_df
         },
-        'Insurance': {
-            'Features': insurance_features_df,
-            'Predictions': insurance_pred_df,
-            'Matrix': insurance_sim_df
-        }
+        'Tickers': tickers
     }
 
     return data_dict
 
 
-@st.cache
 def get_models():
 
     common_model = pickle.load(open(MODELS_DIR/'common_model.pkl', 'rb'))
@@ -71,28 +73,31 @@ def get_models():
     return model_dict
 
 
-# Header
-st.write("""
-# Boston House Price Prediction App
-This app predicts the **Boston House Price**!
-""")
-st.write('---')
-
-
-# Loads the Boston House Price Dataset
+# Loads Data
 data = get_data()
 models = get_models()
 
+# Header
+st.write(""" # Value Stock Finder Put some information **HERE**!""")
+ticker = st.selectbox("Choose ticker", data['Tickers'])
+st.markdown("<div align='center'><br>"
+            "<img src='https://img.shields.io/badge/MADE%20WITH-PYTHON%20-red?style=for-the-badge'"
+            "alt='API stability' height='25'/>"
+            "<img src='https://img.shields.io/badge/DATA%20FROM-SIMFIN-blue?style=for-the-badge'"
+            "alt='API stability' height='25'/>"
+            "<img src='https://img.shields.io/badge/DASHBOARDING%20WITH-Streamlit-green?style=for-the-badge'"
+            "alt='API stability' height='25'/></div>", unsafe_allow_html=True)
+st.write('---')
 
-stock = st.selectbox(
-    "Choose countries", list(df.index), ["China", "United States of America"]
-)
+st.line_chart(data['Predictions'].loc[ticker])
+st.dataframe(data['Predictions'].loc[ticker])
+
 
 # Explaining the model's predictions using SHAP values
 # https://github.com/slundberg/shap
-explainer = shap.TreeExplainer(model)
-shap_values = explainer.shap_values(X)
+# explainer = shap.TreeExplainer(model)
+# shap_values = explainer.shap_values(X)
 
-plt.title('Feature importance based on SHAP values (Bar)')
-shap.summary_plot(shap_values, X, plot_type="bar")
-st.pyplot(bbox_inches='tight')
+# plt.title('Feature importance based on SHAP values (Bar)')
+# shap.summary_plot(shap_values, X, plot_type="bar")
+# st.pyplot(bbox_inches='tight')
