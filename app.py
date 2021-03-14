@@ -4,7 +4,9 @@ import streamlit as st
 import yfinance as yf
 import pickle
 # from utils import MultiApp
+from predict import model_explainer
 import pathlib
+from charts import stock_line_chart, scatter_variance_chart
 
 DATA_DIR = pathlib.Path('./data')
 MODELS_DIR = pathlib.Path('./models')
@@ -41,6 +43,12 @@ def get_data():
     tickers = np.concatenate(
         (common_features_df.index, banks_features_df.index, insurance_features_df.index))
 
+    # COMPANY
+    company_df = pd.read_csv(DATA_DIR/'company.csv')
+
+    # INDUSTRY
+    industry_df = pd.read_csv(DATA_DIR/'industry.csv')
+
     data_dict = {
         'Predictions': prediction_df,
         'Features': {
@@ -53,7 +61,9 @@ def get_data():
             'Banks': banks_sim_df,
             'Insurance': insurance_sim_df
         },
-        'Tickers': tickers
+        'Tickers': tickers,
+        'Company': company_df,
+        'Industry': industry_df
     }
 
     return data_dict
@@ -78,8 +88,11 @@ data = get_data()
 models = get_models()
 
 # Header
-st.write(""" # Value Stock Finder Put some information **HERE**!""")
-ticker = st.selectbox("Choose ticker", data['Tickers'])
+st.write(""" ## Value Stock Finder Put some information **HERE**!""")
+tickers = data['Company'][['Ticker', 'Company Name']].set_index('Ticker')
+ticker = st.selectbox("Choose ticker", tickers.index,
+                      format_func=tickers['Company Name'].str.title().to_dict().get)
+
 st.markdown("<div align='center'><br>"
             "<img src='https://img.shields.io/badge/MADE%20WITH-PYTHON%20-red?style=for-the-badge'"
             "alt='API stability' height='25'/>"
@@ -89,9 +102,18 @@ st.markdown("<div align='center'><br>"
             "alt='API stability' height='25'/></div>", unsafe_allow_html=True)
 st.write('---')
 
-st.line_chart(data['Predictions'].loc[ticker])
-st.dataframe(data['Predictions'].loc[ticker])
+# LINE CHART
+df = data['Predictions'].loc[ticker]
+c = stock_line_chart(df)
+st.altair_chart(c, use_container_width=True)
 
+# SCATTER CHART
+df = data['Predictions'].join(data['Company'].set_index(
+    'Ticker')).reset_index().merge(data['Industry'], on='IndustryId').set_index(['Ticker', 'Date'])
+c = scatter_variance_chart(df)
+st.altair_chart(c, use_container_width=True)
+
+st.dataframe(df.head())
 
 # Explaining the model's predictions using SHAP values
 # https://github.com/slundberg/shap
