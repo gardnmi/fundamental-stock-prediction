@@ -137,9 +137,11 @@ def load_dataset(refresh_days=1, dataset='common', thresh=0.7, simfin_api_key='f
     ).set_index(['Ticker', 'Publish Date'])
 
     # Merge Fundamental with Stock Prices
-    # Downsample share prices to monthly
+    # Downsample Share Prices to Rolling 30 Day End of Month
+    shareprices_df = shareprices_df[['Close']].groupby('Ticker').rolling(
+        30, min_periods=1).mean().reset_index(0, drop=True)
     shareprices_df = sf.resample(
-        df=shareprices_df[['Close']], rule='M', method='mean')
+        df=shareprices_df, rule='M', method=lambda x: x.last())
 
     df = sf.reindex(df_src=fundamental_df, df_target=shareprices_df, group_index=TICKER, method='ffill'
                     ).dropna(how='all').join(shareprices_df)
