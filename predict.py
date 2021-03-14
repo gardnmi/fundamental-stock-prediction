@@ -1,16 +1,10 @@
 import pandas as pd
-import numpy as np
 import pickle
 import simfin as sf
 import shap
-from sklearn.model_selection import train_test_split
 from sklearn.metrics.pairwise import cosine_similarity
 from xgboost import XGBRegressor
-from load import load_dataset
 import pathlib
-import os
-from dotenv import load_dotenv
-
 
 MODELS_DIR = pathlib.Path('./models')
 DATA_DIR = pathlib.Path('./data')
