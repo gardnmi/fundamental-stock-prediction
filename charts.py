@@ -1,9 +1,11 @@
 import altair as alt
+import streamlit as st
 
 
 def stock_line_chart(df):
 
     source = df.copy()
+    source = source.round(0)
     source = source.reset_index().melt('Date', var_name='category', value_name='Price')
     # Create a selection that chooses the nearest point & selects based on x-value
     nearest = alt.selection(type='single', nearest=True, on='mouseover',
@@ -54,8 +56,8 @@ def stock_line_chart(df):
 
 def scatter_variance_chart(df):
     source = df.copy()
-    source = source[source.index.get_level_values(
-        1) == source.index.get_level_values(1).max()]
+    # source = source[source.index.get_level_values(
+    #     1) == source.index.get_level_values(1).max()]
     source = source.reset_index()
 
     c = alt.Chart(source).mark_circle(size=60).encode(
