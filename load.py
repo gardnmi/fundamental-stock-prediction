@@ -2,9 +2,17 @@ import pandas as pd
 import numpy as np
 import simfin as sf
 from simfin.names import *
+import pathlib
+
+DATA_DIR = pathlib.Path('./data')
 
 
-def load_dataset(refresh_days=1, dataset='common', thresh=0.7, simfin_api_key='free', simfin_directory='simfin_data/'):
+def load_dataset(refresh_days=1,
+                 dataset='common',
+                 thresh=0.7,
+                 simfin_api_key='free',
+                 simfin_directory='simfin_data/',
+                 data_directory=DATA_DIR):
 
     # Set Simfin Settings
     sf.set_api_key(simfin_api_key)
@@ -13,6 +21,16 @@ def load_dataset(refresh_days=1, dataset='common', thresh=0.7, simfin_api_key='f
     # Used by all datasets
     shareprices_df = sf.load_shareprices(
         variant='daily', market='us', refresh_days=refresh_days)
+
+    derived_shareprice_df = sf.load_derived_shareprices(
+        variant='latest', market='us')
+    derived_shareprice_df.to_csv(data_directory/'stock_derived.csv')
+
+    company_df = sf.load_companies(market='us', refresh_days=1)
+    company_df.to_csv(data_directory/'company.csv')
+
+    industry_df = sf.load_industries(refresh_days=1)
+    industry_df.to_csv(data_directory/'industry.csv')
 
     if dataset == 'common':
 
@@ -34,6 +52,10 @@ def load_dataset(refresh_days=1, dataset='common', thresh=0.7, simfin_api_key='f
 
         derived_df = sf.load_derived(
             variant='ttm', market='us', refresh_days=refresh_days)
+
+        # Export Derived Data to be used in streamlit
+        derived_df.groupby('Ticker').last().to_csv(
+            data_directory/'common_fundamental_derived.csv')
 
         cache_args = {'cache_name': 'financial_signals',
                       'cache_refresh': refresh_days}
@@ -81,6 +103,10 @@ def load_dataset(refresh_days=1, dataset='common', thresh=0.7, simfin_api_key='f
         derived_df = sf.load_derived_banks(
             variant='ttm', market='us', refresh_days=refresh_days)
 
+        # Export Derived Data to be used in streamlit
+        derived_df.groupby('Ticker').last().to_csv(
+            data_directory/'banks_fundamental_derived.csv')
+
         # Remove Columns that exist in other Fundamental DataFrames
         balance_columns = balance_df.columns[~balance_df.columns.isin(
             set().union(income_df.columns))]
@@ -107,6 +133,10 @@ def load_dataset(refresh_days=1, dataset='common', thresh=0.7, simfin_api_key='f
             variant='ttm', market='us', refresh_days=refresh_days)
         derived_df = sf.load_derived_insurance(
             variant='ttm', market='us', refresh_days=refresh_days)
+
+        # Export Derived Data to be used in streamlit
+        derived_df.groupby('Ticker').last().to_csv(
+            data_directory/'insurance_fundamental_derived.csv')
 
         # Remove Columns that exist in other Fundamental DataFrames
         balance_columns = balance_df.columns[~balance_df.columns.isin(

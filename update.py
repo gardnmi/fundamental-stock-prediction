@@ -16,12 +16,6 @@ common_df = load_dataset(dataset='common', simfin_api_key=SIMFIN_API_KEY)
 banks_df = load_dataset(dataset='banks', simfin_api_key=SIMFIN_API_KEY)
 insurance_df = load_dataset(dataset='insurance', simfin_api_key=SIMFIN_API_KEY)
 
-company_df = sf.load_companies(market='us', refresh_days=1)
-industry_df = sf.load_industries(refresh_days=1)
-
-company_df.to_csv(DATA_DIR/'company.csv')
-industry_df.to_csv(DATA_DIR/'industry.csv')
-
 # TRAIN
 common_model = train(common_df,
                      winsor_quantile=0.01,

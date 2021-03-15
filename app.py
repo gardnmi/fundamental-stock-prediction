@@ -88,10 +88,10 @@ data = get_data()
 models = get_models()
 
 # Header
-st.write(""" ## Value Stock Finder Put some information **HERE**!""")
+st.title('Random Forrest Stock Valuation')
+st.markdown(
+    'A machine learning approach to valuing stocks based on Trailing Twelve Month (TTM) Fundamentals')
 tickers = data['Company'][['Ticker', 'Company Name']].set_index('Ticker')
-ticker = st.selectbox("Choose ticker", tickers.index,
-                      format_func=tickers['Company Name'].str.title().to_dict().get)
 
 st.markdown("<div align='center'><br>"
             "<img src='https://img.shields.io/badge/MADE%20WITH-PYTHON%20-red?style=for-the-badge'"
@@ -101,6 +101,9 @@ st.markdown("<div align='center'><br>"
             "<img src='https://img.shields.io/badge/DASHBOARDING%20WITH-Streamlit-green?style=for-the-badge'"
             "alt='API stability' height='25'/></div>", unsafe_allow_html=True)
 st.write('---')
+
+ticker = st.selectbox("Choose ticker", tickers.index,
+                      format_func=tickers['Company Name'].str.title().to_dict().get)
 
 # LINE CHART
 df = data['Predictions'].loc[ticker]
