@@ -15,7 +15,9 @@ def stock_line_chart(df):
     line = alt.Chart(source).mark_line(interpolate='basis').encode(
         x='Date:T',
         y='Price:Q',
-        color='category:N'
+        color=alt.Color('category:N',
+                        legend=alt.Legend(orient='bottom'))
+        # color='category:N'
     )
 
     # Transparent selectors across the chart. This is what tells us
@@ -64,27 +66,28 @@ def scatter_variance_chart(df):
         y='Predicted Close',
         color=alt.Color('Predicted vs Close % Bin',
                         legend=alt.Legend(orient='bottom')),
-        tooltip=['Sector',
-                 'Industry',
-                 'Company Name',
-                 'Ticker',
-                 'Close',
-                 'Predicted Close',
-                 alt.Tooltip('Predicted vs Close %:Q', format='.0%'),
-                 'Market-Cap ($)',
-                 'Enterprise Value ($)',
-                 'Free Cash Flow ($)',
-                 alt.Tooltip('Price to Earnings Ratio (ttm):Q', format='.2f'),
-                 alt.Tooltip('Price to Sales Ratio (ttm):Q', format='.2f'),
-                 alt.Tooltip('Price to Book Value:Q', format='.2f'),
-                 alt.Tooltip('Price to Free Cash Flow (ttm):Q', format='.2f'),
-                 alt.Tooltip('Current Ratio:Q', format='.2f'),
-                 alt.Tooltip('Current Ratio:Q', format='.2f'),
-                 alt.Tooltip('EV/EBITDA:Q', format='.2f'),
-                 alt.Tooltip('EV/Sales:Q', format='.2f'),
-                 alt.Tooltip('EV/FCF:Q', format='.2f'),
-                 'Pietroski F-Score'
-                 ]
+        tooltip=[
+            'Company Name',
+            'Ticker',
+            'Sector',
+            'Industry',
+            'Close',
+            'Predicted Close',
+            alt.Tooltip('Predicted vs Close %:Q', format='.0%'),
+            'Market-Cap ($)',
+            'Enterprise Value ($)',
+            'Free Cash Flow ($)',
+            alt.Tooltip('Price to Earnings Ratio (ttm):Q', format='.2f'),
+            alt.Tooltip('Price to Sales Ratio (ttm):Q', format='.2f'),
+            alt.Tooltip('Price to Book Value:Q', format='.2f'),
+            alt.Tooltip('Price to Free Cash Flow (ttm):Q', format='.2f'),
+            alt.Tooltip('Current Ratio:Q', format='.2f'),
+            alt.Tooltip('Current Ratio:Q', format='.2f'),
+            alt.Tooltip('EV/EBITDA:Q', format='.2f'),
+            alt.Tooltip('EV/Sales:Q', format='.2f'),
+            alt.Tooltip('EV/FCF:Q', format='.2f'),
+            'Pietroski F-Score'
+        ]
     ).interactive().properties(
         height=500
     )

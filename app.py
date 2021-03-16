@@ -27,7 +27,9 @@ MODELS_DIR = pathlib.Path('./models')
 # Add SHAP Explanations
 # Add YFinance Stock Description
 # Add Linked Brushing Scatter Plot https://altair-viz.github.io/gallery/scatter_linked_brush.html
-
+# News Feed API?
+# Replace SHAP with shapash
+# Implement News Feed https://github.com/kotartemiy/pygooglenews
 
 # SideBar
 st.set_page_config(
@@ -234,6 +236,10 @@ COMMON_FEATURES = data['Features']['Common']
 BANK_FEATURES = data['Features']['Banks']
 INSURANCE_FEATURES = data['Features']['Insurance']
 
+COMMON_EXPLAINER = shap.TreeExplainer(COMMON_MODEL)
+BANK_EXPLAINER = shap.TreeExplainer(BANK_MODEL)
+INSURANCE_EXPLAINER = shap.TreeExplainer(INSURANCE_MODEL)
+
 
 # Header
 with st.beta_container():
@@ -280,14 +286,11 @@ with st.beta_container():
         c = stock_line_chart(df)
         st.altair_chart(c, use_container_width=True)
 
-        with st.beta_expander("See prediction explanation"):
-            st.write("""
-                SHAP EXPLANTION GOES HERE
-            """)
-            st.image("https://static.streamlit.io/examples/dice.jpg")
-
         if ticker in COMMON_TICKERS:
-            pass
+            shap_values = COMMON_EXPLAINER(
+                COMMON_FEATURES.loc[slice(ticker, ticker), :])[0]
+            st.dataframe(COMMON_FEATURES.loc[ticker])
+            st.pyplot(shap.waterfall_plot(shap_values))
         elif ticker in BANK_TICKERS:
             pass
         elif ticker in INSURANCE_TICKERS:
@@ -295,18 +298,12 @@ with st.beta_container():
         else:
             pass
 
-    with st.beta_expander("See explanation"):
-        st.write("""
-            SHAP EXPLANTION GOES HERE
-        """)
-        st.image("https://static.streamlit.io/examples/dice.jpg")
-
 # Feature Importance
 with st.beta_container():
     st.write('---')
     # https://github.com/slundberg/shap
-    explainer = shap.TreeExplainer(COMMON_MODEL)
-    shap_values = explainer(COMMON_FEATURES)
+    # explainer = shap.TreeExplainer(COMMON_MODEL)
+    shap_values = COMMON_EXPLAINER(COMMON_FEATURES)
     st.markdown('### Feature Importance')
     shap.plots.bar(shap_values, max_display=15)
     plt.xlabel("Average Absolute Feature Price Movement")
