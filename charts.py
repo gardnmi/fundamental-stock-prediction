@@ -59,13 +59,34 @@ def scatter_variance_chart(df):
     # source = source[source.index.get_level_values(
     #     1) == source.index.get_level_values(1).max()]
     source = source.reset_index()
-
-    c = alt.Chart(source).mark_circle(size=60).encode(
+    c = alt.Chart(source).mark_point(size=60).encode(
         x='Close',
         y='Predicted Close',
-        color='Sector',
-        tooltip=['Sector', 'Industry', 'Company Name',
-                 'Ticker', 'Close', 'Predicted Close']
-    ).interactive()
+        color=alt.Color('Predicted vs Close % Bin',
+                        legend=alt.Legend(orient='bottom')),
+        tooltip=['Sector',
+                 'Industry',
+                 'Company Name',
+                 'Ticker',
+                 'Close',
+                 'Predicted Close',
+                 alt.Tooltip('Predicted vs Close %:Q', format='.0%'),
+                 'Market-Cap ($)',
+                 'Enterprise Value ($)',
+                 'Free Cash Flow ($)',
+                 alt.Tooltip('Price to Earnings Ratio (ttm):Q', format='.2f'),
+                 alt.Tooltip('Price to Sales Ratio (ttm):Q', format='.2f'),
+                 alt.Tooltip('Price to Book Value:Q', format='.2f'),
+                 alt.Tooltip('Price to Free Cash Flow (ttm):Q', format='.2f'),
+                 alt.Tooltip('Current Ratio:Q', format='.2f'),
+                 alt.Tooltip('Current Ratio:Q', format='.2f'),
+                 alt.Tooltip('EV/EBITDA:Q', format='.2f'),
+                 alt.Tooltip('EV/Sales:Q', format='.2f'),
+                 alt.Tooltip('EV/FCF:Q', format='.2f'),
+                 'Pietroski F-Score'
+                 ]
+    ).interactive().properties(
+        height=500
+    )
 
     return c
