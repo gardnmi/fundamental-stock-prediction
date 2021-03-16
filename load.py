@@ -7,12 +7,10 @@ import pathlib
 DATA_DIR = pathlib.Path('./data')
 
 
-def load_dataset(refresh_days=1,
-                 dataset='common',
-                 thresh=0.7,
-                 simfin_api_key='free',
-                 simfin_directory='simfin_data/',
-                 data_directory=DATA_DIR):
+def load_shareprices(
+        refresh_days=1,
+        simfin_api_key='free',
+        simfin_directory='simfin_data/'):
 
     # Set Simfin Settings
     sf.set_api_key(simfin_api_key)
@@ -21,6 +19,29 @@ def load_dataset(refresh_days=1,
     # Used by all datasets
     shareprices_df = sf.load_shareprices(
         variant='daily', market='us', refresh_days=refresh_days)
+
+    # Merge Fundamental with Stock Prices
+    # Downsample Share Prices to Rolling 30 Day End of Month
+    shareprices_df = shareprices_df[['Close']].groupby('Ticker').rolling(
+        30, min_periods=1).mean().reset_index(0, drop=True)
+    shareprices_df = sf.resample(
+        df=shareprices_df, rule='M', method=lambda x: x.last())
+
+    return shareprices_df
+
+
+def load_dataset(refresh_days=1,
+                 dataset='common',
+                 thresh=0.7,
+                 simfin_api_key='free',
+                 simfin_directory='simfin_data/',
+                 data_directory=DATA_DIR,
+                 shareprices_df=''
+                 ):
+
+    # Set Simfin Settings
+    sf.set_api_key(simfin_api_key)
+    sf.set_data_dir(simfin_directory)
 
     derived_shareprice_df = sf.load_derived_shareprices(
         variant='latest', market='us')
@@ -37,23 +58,41 @@ def load_dataset(refresh_days=1,
         # Load Data from Simfin
         income_df = sf.load_income(
             variant='ttm', market='us', refresh_days=refresh_days)
+        income_df = income_df.sort_index(
+            level=['Ticker', 'Report Date'], ascending=[1, 1])
         income_quarterly_df = sf.load_income(
             variant='quarterly', market='us', refresh_days=refresh_days)
+        income_quarterly_df = income_quarterly_df.sort_index(
+            level=['Ticker', 'Report Date'], ascending=[1, 1])
+        income_df.groupby('Ticker').last().to_csv(
+            data_directory/'common_income.csv')
 
         balance_df = sf.load_balance(
             variant='ttm', market='us', refresh_days=refresh_days)
+        balance_df = balance_df.sort_index(
+            level=['Ticker', 'Report Date'], ascending=[1, 1])
         balance_quarterly_df = sf.load_balance(
             variant='quarterly', market='us', refresh_days=refresh_days)
+        balance_quarterly_df = balance_quarterly_df.sort_index(
+            level=['Ticker', 'Report Date'], ascending=[1, 1])
+        balance_df.groupby('Ticker').last().to_csv(
+            data_directory/'common_balance.csv')
 
         cashflow_df = sf.load_cashflow(
             variant='ttm', market='us', refresh_days=refresh_days)
+        cashflow_df = cashflow_df.sort_index(
+            level=['Ticker', 'Report Date'], ascending=[1, 1])
         cashflow_quarterlay_df = sf.load_cashflow(
             variant='quarterly', market='us', refresh_days=refresh_days)
+        cashflow_quarterlay_df = cashflow_quarterlay_df.sort_index(
+            level=['Ticker', 'Report Date'], ascending=[1, 1])
+        cashflow_df.groupby('Ticker').last().to_csv(
+            data_directory/'common_cashflow.csv')
 
         derived_df = sf.load_derived(
             variant='ttm', market='us', refresh_days=refresh_days)
-
-        # Export Derived Data to be used in streamlit
+        derived_df = derived_df.sort_index(
+            level=['Ticker', 'Report Date'], ascending=[1, 1])
         derived_df.groupby('Ticker').last().to_csv(
             data_directory/'common_fundamental_derived.csv')
 
@@ -96,14 +135,31 @@ def load_dataset(refresh_days=1,
         # Load Data from Simfin
         income_df = sf.load_income_banks(
             variant='ttm', market='us', refresh_days=refresh_days)
+        income_df = income_df.sort_index(
+            level=['Ticker', 'Report Date'], ascending=[1, 1])
+        income_df.groupby('Ticker').last().to_csv(
+            data_directory/'banks_income.csv')
+
         balance_df = sf.load_balance_banks(
             variant='ttm', market='us', refresh_days=refresh_days)
+        balance_df = balance_df.sort_index(
+            level=['Ticker', 'Report Date'], ascending=[1, 1])
+        balance_df.groupby('Ticker').last().to_csv(
+            data_directory/'banks_balance.csv')
+
         cashflow_df = sf.load_cashflow_banks(
             variant='ttm', market='us', refresh_days=refresh_days)
+        cashflow_df = cashflow_df.sort_index(
+            level=['Ticker', 'Report Date'], ascending=[1, 1])
+        cashflow_df.groupby('Ticker').last().to_csv(
+            data_directory/'banks_cashflow.csv')
+
         derived_df = sf.load_derived_banks(
             variant='ttm', market='us', refresh_days=refresh_days)
-
-        # Export Derived Data to be used in streamlit
+        derived_df = derived_df.sort_index(
+            level=['Ticker', 'Report Date'], ascending=[1, 1])
+        derived_df.groupby('Ticker').last().to_csv(
+            data_directory/'banks_fundamental_derived.csv')
         derived_df.groupby('Ticker').last().to_csv(
             data_directory/'banks_fundamental_derived.csv')
 
@@ -127,14 +183,29 @@ def load_dataset(refresh_days=1,
         # Load Data from Simfin
         income_df = sf.load_income_insurance(
             variant='ttm', market='us', refresh_days=refresh_days)
+        income_df = income_df.sort_index(
+            level=['Ticker', 'Report Date'], ascending=[1, 1])
+        income_df.groupby('Ticker').last().to_csv(
+            data_directory/'insurance_income.csv')
+
         balance_df = sf.load_balance_insurance(
             variant='ttm', market='us', refresh_days=refresh_days)
+        balance_df = balance_df.sort_index(
+            level=['Ticker', 'Report Date'], ascending=[1, 1])
+        balance_df.groupby('Ticker').last().to_csv(
+            data_directory/'insurance_balance.csv')
+
         cashflow_df = sf.load_cashflow_insurance(
             variant='ttm', market='us', refresh_days=refresh_days)
+        cashflow_df = cashflow_df.sort_index(
+            level=['Ticker', 'Report Date'], ascending=[1, 1])
+        cashflow_df.groupby('Ticker').last().to_csv(
+            data_directory/'insurance_cashflow.csv')
+
         derived_df = sf.load_derived_insurance(
             variant='ttm', market='us', refresh_days=refresh_days)
-
-        # Export Derived Data to be used in streamlit
+        derived_df = derived_df.sort_index(
+            level=['Ticker', 'Report Date'], ascending=[1, 1])
         derived_df.groupby('Ticker').last().to_csv(
             data_directory/'insurance_fundamental_derived.csv')
 
@@ -165,13 +236,6 @@ def load_dataset(refresh_days=1,
     fundamental_df['Published Date'] = fundamental_df['Publish Date']
     fundamental_df = fundamental_df.reset_index(
     ).set_index(['Ticker', 'Publish Date'])
-
-    # Merge Fundamental with Stock Prices
-    # Downsample Share Prices to Rolling 30 Day End of Month
-    shareprices_df = shareprices_df[['Close']].groupby('Ticker').rolling(
-        30, min_periods=1).mean().reset_index(0, drop=True)
-    shareprices_df = sf.resample(
-        df=shareprices_df, rule='M', method=lambda x: x.last())
 
     df = sf.reindex(df_src=fundamental_df, df_target=shareprices_df, group_index=TICKER, method='ffill'
                     ).dropna(how='all').join(shareprices_df)
@@ -207,5 +271,8 @@ def load_dataset(refresh_days=1,
 
     df[per_share_cols] = df[per_share_cols].div(
         df['Shares (Diluted)'], axis=0)
+
+    # Sort
+    df = df.sort_index(level=['Ticker', 'Date'], ascending=[1, 1])
 
     return df

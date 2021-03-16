@@ -1,6 +1,6 @@
 # Move the Update Data Logic Here
 import simfin as sf
-from load import load_dataset
+from load import load_dataset, load_shareprices
 import pathlib
 import os
 from dotenv import load_dotenv
@@ -12,9 +12,13 @@ MODELS_DIR = pathlib.Path('./models')
 DATA_DIR = pathlib.Path('./data')
 
 # LOAD
-common_df = load_dataset(dataset='common', simfin_api_key=SIMFIN_API_KEY)
-banks_df = load_dataset(dataset='banks', simfin_api_key=SIMFIN_API_KEY)
-insurance_df = load_dataset(dataset='insurance', simfin_api_key=SIMFIN_API_KEY)
+shareprices_df = load_shareprices(simfin_api_key=SIMFIN_API_KEY)
+common_df = load_dataset(
+    dataset='common', simfin_api_key=SIMFIN_API_KEY, shareprices_df=shareprices_df)
+banks_df = load_dataset(
+    dataset='banks', simfin_api_key=SIMFIN_API_KEY, shareprices_df=shareprices_df)
+insurance_df = load_dataset(
+    dataset='insurance', simfin_api_key=SIMFIN_API_KEY, shareprices_df=shareprices_df)
 
 # TRAIN
 common_model = train(common_df,
