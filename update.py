@@ -22,11 +22,11 @@ common_model = train(common_df,
                      model_name='common_model',
                      feature_name='common',
                      param=dict(learning_rate=0.01,
-                                max_depth=2,
+                                max_depth=3,
                                 subsample=.5,
                                 colsample_bylevel=0.7,
                                 colsample_bytree=0.7,
-                                n_estimators=210))
+                                n_estimators=200))
 
 banks_model = train(banks_df,
                     winsor_quantile=0.05,
