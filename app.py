@@ -6,10 +6,10 @@ import yfinance as yf
 import shap
 import pickle
 import matplotlib.pyplot as plt
-from utils import human_format
 from predict import model_explainer
 import pathlib
 from charts import stock_line_chart, scatter_variance_chart
+from typing import Dict
 
 DATA_DIR = pathlib.Path('./data')
 MODELS_DIR = pathlib.Path('./models')
@@ -31,13 +31,35 @@ MODELS_DIR = pathlib.Path('./models')
 # Replace SHAP with shapash
 # Implement News Feed https://github.com/kotartemiy/pygooglenews
 
-# SideBar
+
+# Page Settings
 st.set_page_config(
     page_title="Stock Value",
     page_icon="",
     layout='centered',  # wide
     initial_sidebar_state="expanded",
 )
+
+
+def get_default_format(data: pd.DataFrame, int_format="{0:,.0f}".format, float_format="{0:,.2f}".format) -> Dict[str, str]:
+    # https://awesome-streamlit.org/
+    """A dictionary of columns and formats for the Pandas DataFrame Styler
+
+    Arguments:
+        data {pd.DataFrame} -- A DataFrame of Data]
+
+    Returns:
+        Dict[str,str] -- A dictionary of default formats for the columns
+    """
+    format_dict = {}
+    for column in data.columns:
+        if data[column].dtype == "int64":
+            format_dict[column] = int_format
+        elif data[column].dtype == "float64":
+            format_dict[column] = float_format
+        else:
+            format_dict[column] = "{0:}".format
+    return format_dict
 
 
 @st.cache
@@ -118,6 +140,106 @@ def get_data():
 
     fundamental_derived_df = pd.concat(dfs)[cols]
 
+    # INCOME STATEMENT
+    drop_cols = ['SimFinId', 'Currency', 'Fiscal Year',
+                 'Fiscal Period',  'Restated Date',  'Shares (Diluted)']
+
+    common_income_df = pd.read_csv(
+        DATA_DIR/'common_income.csv', index_col=['Ticker'])
+
+    format_dict = get_default_format(
+        common_income_df, int_format=human_format, float_format=human_format)
+    for key, value in format_dict.items():
+        common_income_df[key] = common_income_df[key].apply(value)
+
+    common_income_df = common_income_df.drop(columns=drop_cols)
+
+    banks_income_df = pd.read_csv(
+        DATA_DIR/'banks_income.csv', index_col=['Ticker'])
+
+    format_dict = get_default_format(
+        banks_income_df, int_format=human_format, float_format=human_format)
+    for key, value in format_dict.items():
+        banks_income_df[key] = banks_income_df[key].apply(value)
+
+    banks_income_df = banks_income_df.drop(columns=drop_cols)
+
+    insurance_income_df = pd.read_csv(
+        DATA_DIR/'insurance_income.csv', index_col=['Ticker'])
+
+    format_dict = get_default_format(
+        insurance_income_df, int_format=human_format, float_format=human_format)
+    for key, value in format_dict.items():
+        insurance_income_df[key] = insurance_income_df[key].apply(value)
+
+    insurance_income_df = insurance_income_df.drop(columns=drop_cols)
+
+    # BALANCE SHEET
+    common_balance_df = pd.read_csv(
+        DATA_DIR/'common_balance.csv', index_col=['Ticker'])
+
+    format_dict = get_default_format(
+        common_balance_df, int_format=human_format, float_format=human_format)
+    for key, value in format_dict.items():
+        common_balance_df[key] = common_balance_df[key].apply(value)
+
+    common_balance_df = common_balance_df.drop(columns=drop_cols)
+
+    banks_balance_df = pd.read_csv(
+        DATA_DIR/'banks_balance.csv', index_col=['Ticker'])
+
+    format_dict = get_default_format(
+        banks_balance_df, int_format=human_format, float_format=human_format)
+    for key, value in format_dict.items():
+        banks_balance_df[key] = banks_balance_df[key].apply(value)
+
+    banks_balance_df = banks_balance_df.drop(columns=drop_cols)
+
+    insurance_balance_df = pd.read_csv(
+        DATA_DIR/'insurance_balance.csv', index_col=['Ticker'])
+
+    format_dict = get_default_format(
+        insurance_balance_df, int_format=human_format, float_format=human_format)
+    for key, value in format_dict.items():
+        insurance_balance_df[key] = insurance_balance_df[key].apply(
+            value)
+
+    insurance_balance_df = insurance_balance_df.drop(columns=drop_cols)
+
+    # CASH FLOW STATEMENT
+    common_cashflow_df = pd.read_csv(
+        DATA_DIR/'common_cashflow.csv', index_col=['Ticker'])
+
+    format_dict = get_default_format(
+        common_cashflow_df, int_format=human_format, float_format=human_format)
+    for key, value in format_dict.items():
+        common_cashflow_df[key] = common_cashflow_df[key].apply(
+            value)
+
+    common_cashflow_df = common_cashflow_df.drop(columns=drop_cols)
+
+    banks_cashflow_df = pd.read_csv(
+        DATA_DIR/'banks_cashflow.csv', index_col=['Ticker'])
+
+    format_dict = get_default_format(
+        banks_cashflow_df, int_format=human_format, float_format=human_format)
+    for key, value in format_dict.items():
+        banks_cashflow_df[key] = banks_cashflow_df[key].apply(
+            value)
+
+    banks_cashflow_df = banks_cashflow_df.drop(columns=drop_cols)
+
+    insurance_cashflow_df = pd.read_csv(
+        DATA_DIR/'insurance_cashflow.csv', index_col=['Ticker'])
+
+    format_dict = get_default_format(
+        insurance_cashflow_df, int_format=human_format, float_format=human_format)
+    for key, value in format_dict.items():
+        insurance_cashflow_df[key] = insurance_cashflow_df[key].apply(
+            value)
+
+    insurance_cashflow_df = insurance_cashflow_df.drop(columns=drop_cols)
+
     data_dict = {
         'Predictions': prediction_df,
         'Features': {
@@ -129,6 +251,21 @@ def get_data():
             'Common': common_sim_df,
             'Banks': banks_sim_df,
             'Insurance': insurance_sim_df
+        },
+        'Income': {
+            'Common': common_income_df,
+            'Banks': banks_income_df,
+            'Insurance': insurance_income_df
+        },
+        'Balance': {
+            'Common': common_balance_df,
+            'Banks': banks_balance_df,
+            'Insurance': insurance_balance_df
+        },
+        'Cashflow': {
+            'Common': common_cashflow_df,
+            'Banks': banks_cashflow_df,
+            'Insurance': insurance_cashflow_df
         },
         'Tickers': tickers,
         'Company': company_df,
@@ -219,9 +356,6 @@ data = get_data()
 models = get_models()
 df = transform_data(data)
 
-st.dataframe(df.head())
-
-
 # Variables
 COMMON_TICKERS = data['Features']['Common'].index
 BANK_TICKERS = data['Features']['Banks'].index
@@ -240,6 +374,21 @@ COMMON_EXPLAINER = shap.TreeExplainer(COMMON_MODEL)
 BANK_EXPLAINER = shap.TreeExplainer(BANK_MODEL)
 INSURANCE_EXPLAINER = shap.TreeExplainer(INSURANCE_MODEL)
 
+COMMON_SIM = data['Similarity']['Common']
+BANKS_SIM = data['Similarity']['Banks']
+INSURANCE_SIM = data['Similarity']['Insurance']
+
+COMMON_INCOME = data['Income']['Common']
+BANK_INCOME = data['Income']['Banks']
+INSURANCE_INCOME = data['Income']['Insurance']
+
+COMMON_BALANCE = data['Balance']['Common']
+BANK_BALANCE = data['Balance']['Banks']
+INSURANCE_BALANCE = data['Balance']['Insurance']
+
+COMMON_CASHFLOW = data['Cashflow']['Common']
+BANK_CASHFLOW = data['Cashflow']['Banks']
+INSURANCE_CASHFLOW = data['Cashflow']['Insurance']
 
 # Header
 with st.beta_container():
@@ -247,14 +396,14 @@ with st.beta_container():
     st.markdown(
         'A machine learning approach to valuing stocks based on Trailing Twelve Month (TTM) Fundamentals')
 
-    st.markdown("<div align='center'><br>"
-                "<img src='https://img.shields.io/badge/MADE%20WITH-PYTHON%20-red?style=for-the-badge'"
-                "alt='API stability' height='25'/>"
-                "<img src='https://img.shields.io/badge/DATA%20FROM-SIMFIN-blue?style=for-the-badge'"
-                "alt='API stability' height='25'/>"
-                "<img src='https://img.shields.io/badge/DASHBOARDING%20WITH-Streamlit-green?style=for-the-badge'"
-                "alt='API stability' height='25'/></div>", unsafe_allow_html=True)
-    st.write('---')
+    # st.markdown("<div align='center'><br>"
+    #             "<img src='https://img.shields.io/badge/MADE%20WITH-PYTHON%20-red?style=for-the-badge'"
+    #             "alt='API stability' height='25'/>"
+    #             "<img src='https://img.shields.io/badge/DATA%20FROM-SIMFIN-blue?style=for-the-badge'"
+    #             "alt='API stability' height='25'/>"
+    #             "<img src='https://img.shields.io/badge/DASHBOARDING%20WITH-Streamlit-green?style=for-the-badge'"
+    #             "alt='API stability' height='25'/></div>", unsafe_allow_html=True)
+    # st.write('---')
 
 # STOCK FINDER
 with st.beta_container():
@@ -279,24 +428,57 @@ with st.beta_container():
                              format_func=ticker_dic.get)
 
     for ticker in tickers:
+        yticker = yf.Ticker(f'{ticker}')
+        st.header(f'**{ticker_dic[ticker]}**')
+
+        with st.beta_expander("Company Info"):
+            st.markdown(f"> {yticker.info['longBusinessSummary']}")
+        st.markdown(' ', unsafe_allow_html=True)
 
         # LINE CHART
-        st.markdown(f'> {ticker_dic[ticker]}')
+        st.subheader('Close vs Valuation')
         df = data['Predictions'].loc[ticker]
         c = stock_line_chart(df)
         st.altair_chart(c, use_container_width=True)
 
         if ticker in COMMON_TICKERS:
+            st.subheader('Financials')
+            st.write(
+                f"Publish Date: `{COMMON_INCOME.loc[ticker]['Publish Date']}`")
+            st.write(
+                f"Shares (Basic): `{COMMON_INCOME.loc[ticker]['Shares (Basic)']}`")
+
+            income, balance, cashflow = st.beta_columns(3)
+            with income:
+                st.write('INCOME')
+                st.table(COMMON_INCOME.loc[ticker].iloc[2:].rename(
+                    'TTM').dropna())
+            with balance:
+                st.write('BALANCE')
+                st.table(COMMON_BALANCE.loc[ticker].iloc[2:].rename(
+                    'TTM').dropna())
+            with cashflow:
+                st.write('CASHFLOW')
+                st.table(COMMON_CASHFLOW.loc[ticker].iloc[2:].rename(
+                    'TTM').dropna())
+
             shap_values = COMMON_EXPLAINER(
                 COMMON_FEATURES.loc[slice(ticker, ticker), :])[0]
-            st.dataframe(COMMON_FEATURES.loc[ticker])
             st.pyplot(shap.waterfall_plot(shap_values))
+
+            # Make an Input to Expand Beyond 5
+            st.markdown('### 5 Most Similiar Stocks')
+            st.dataframe(COMMON_SIM.loc[ticker].sort_values(
+                ascending=False).iloc[1:6])
+
         elif ticker in BANK_TICKERS:
             pass
         elif ticker in INSURANCE_TICKERS:
             pass
         else:
             pass
+
+        st.write('---')
 
 # Feature Importance
 with st.beta_container():
