@@ -1,4 +1,4 @@
-from utils import human_format
+from utils import human_format, get_default_format
 import pandas as pd
 import numpy as np
 import streamlit as st
@@ -6,10 +6,9 @@ import yfinance as yf
 import shap
 import pickle
 import matplotlib.pyplot as plt
-from predict import model_explainer
 import pathlib
 from charts import stock_line_chart, scatter_variance_chart
-from typing import Dict
+
 
 DATA_DIR = pathlib.Path('./data')
 MODELS_DIR = pathlib.Path('./models')
@@ -41,29 +40,15 @@ st.set_page_config(
 )
 
 
-def get_default_format(data: pd.DataFrame, int_format="{0:,.0f}".format, float_format="{0:,.2f}".format) -> Dict[str, str]:
-    # https://awesome-streamlit.org/
-    """A dictionary of columns and formats for the Pandas DataFrame Styler
-
-    Arguments:
-        data {pd.DataFrame} -- A DataFrame of Data]
-
-    Returns:
-        Dict[str,str] -- A dictionary of default formats for the columns
-    """
-    format_dict = {}
-    for column in data.columns:
-        if data[column].dtype == "int64":
-            format_dict[column] = int_format
-        elif data[column].dtype == "float64":
-            format_dict[column] = float_format
-        else:
-            format_dict[column] = "{0:}".format
-    return format_dict
-
-
 @st.cache
 def get_data():
+    data_dict = {}
+    feature_dict = {}
+    similarity_dict = {}
+    income_dict = {}
+    balance_dict = {}
+    cashflow_dict = {}
+    ratio_figure_dict = {}
 
     # PREDICTIONS
     dfs = []
@@ -72,207 +57,113 @@ def get_data():
             DATA_DIR/f'{sector}_predictions.csv', index_col=['Ticker', 'Date'], parse_dates=['Date'])
         dfs.append(df)
 
-    prediction_df = pd.concat(dfs)
-    _tickers = prediction_df.index.get_level_values(0)
+    df = pd.concat(dfs)
+    _tickers = df.index.get_level_values(0)
+    data_dict['Predictions'] = df
 
-    # FEATURES
-    common_features_df = pd.read_csv(
-        DATA_DIR/'common_features.csv', index_col=['Ticker']).drop(columns=['Date'])
-    banks_features_df = pd.read_csv(
-        DATA_DIR/'banks_features.csv', index_col=['Ticker']).drop(columns=['Date'])
-    insurance_features_df = pd.read_csv(
-        DATA_DIR/'insurance_features.csv', index_col=['Ticker']).drop(columns=['Date'])
+    # COMPANY & TICKERS
+    df = pd.read_csv(DATA_DIR/'company.csv')
+    df['Company Name'] = df['Company Name'].str.title()
+    df = df[df['Ticker'].isin(_tickers)]
+    data_dict['Company'] = df
 
-    # Remove Tickers not in Predictions
-
-    common_features_df = common_features_df[common_features_df.index.isin(
-        _tickers)]
-
-    banks_features_df = banks_features_df[banks_features_df.index.isin(
-        _tickers)]
-
-    insurance_features_df = insurance_features_df[insurance_features_df.index.isin(
-        _tickers)]
-
-    # SIMILARITY MATRIX
-    common_sim_df = pd.read_csv(
-        DATA_DIR/'common_sim_matrix.csv', index_col=['Ticker'])
-    banks_sim_df = pd.read_csv(
-        DATA_DIR/'banks_sim_matrix.csv', index_col=['Ticker'])
-    insurance_sim_df = pd.read_csv(
-        DATA_DIR/'insurance_sim_matrix.csv', index_col=['Ticker'])
-
-    # COMPANY
-    company_df = pd.read_csv(DATA_DIR/'company.csv')
-    company_df['Company Name'] = company_df['Company Name'].str.title()
-    company_df = company_df[company_df['Ticker'].isin(_tickers)]
+    df = df[['Ticker', 'Company Name']].set_index('Ticker')
+    df['Company Name (Ticker)'] = df['Company Name'] + \
+        ' (' + df.index + ')'
+    data_dict['Tickers'] = df
 
     # INDUSTRY
-    industry_df = pd.read_csv(DATA_DIR/'industry.csv')
-
-    # TICKERS
-    tickers = company_df[['Ticker', 'Company Name']].set_index('Ticker')
-    tickers['Company Name (Ticker)'] = tickers['Company Name'] + \
-        ' (' + tickers.index + ')'
+    df = pd.read_csv(DATA_DIR/'industry.csv')
+    data_dict['Industry'] = df
 
     # SHARE PRICE RATIOS
     cols = ['Ticker', 'Market-Cap', 'Price to Earnings Ratio (ttm)', 'Price to Sales Ratio (ttm)',
             'Price to Book Value', 'Price to Free Cash Flow (ttm)', 'Enterprise Value', 'EV/EBITDA',
             'EV/Sales', 'EV/FCF', 'Book to Market Value', 'Operating Income/EV']
 
-    stock_derived_df = pd.read_csv(DATA_DIR/'stock_derived.csv')[cols]
+    df = pd.read_csv(DATA_DIR/'stock_derived.csv')[cols]
+    data_dict['Share Ratio'] = df
 
-    # FUNDAMENTAL RATIOS & FIGURES
-    cols = ['Ticker', 'EBITDA', 'Total Debt',
-            'Free Cash Flow', 'Gross Profit Margin', 'Operating Margin',
-            'Net Profit Margin', 'Return on Equity', 'Return on Assets',
-            'Free Cash Flow to Net Income', 'Current Ratio',
-            'Liabilities to Equity Ratio', 'Debt Ratio',
-            'Earnings Per Share, Basic', 'Earnings Per Share, Diluted',
-            'Sales Per Share', 'Equity Per Share', 'Free Cash Flow Per Share',
-            'Dividends Per Share', 'Pietroski F-Score']
-
-    dfs = []
-    for sector in ['common', 'banks', 'insurance']:
+    for schema in ['common', 'banks', 'insurance']:
+        # FEATURES
         df = pd.read_csv(
-            DATA_DIR/f'{sector}_fundamental_derived.csv')
-        dfs.append(df)
+            DATA_DIR/f'{schema}_features.csv', index_col=['Ticker']).drop(columns=['Date'])
+        df = df[df.index.isin(_tickers)]
 
-    fundamental_derived_df = pd.concat(dfs)[cols]
+        feature_dict[schema.title()] = df
 
-    # INCOME STATEMENT
-    drop_cols = ['SimFinId', 'Currency', 'Fiscal Year',
-                 'Fiscal Period',  'Restated Date',  'Shares (Diluted)']
+        # SIMILARITY MATRIX
+        df = pd.read_csv(
+            DATA_DIR/f'{schema}_sim_matrix.csv', index_col=['Ticker'])
+        similarity_dict[schema.title()] = df
 
-    common_income_df = pd.read_csv(
-        DATA_DIR/'common_income.csv', index_col=['Ticker'])
+        # INCOME STATEMENT
+        df = pd.read_csv(
+            DATA_DIR/f'{schema}_income.csv', index_col=['Ticker'])
 
-    format_dict = get_default_format(
-        common_income_df, int_format=human_format, float_format=human_format)
-    for key, value in format_dict.items():
-        common_income_df[key] = common_income_df[key].apply(value)
+        # format dataframe
+        format_dict = get_default_format(
+            df, int_format=human_format, float_format=human_format)
+        for key, value in format_dict.items():
+            df[key] = df[key].apply(value)
 
-    common_income_df = common_income_df.drop(columns=drop_cols)
+        drop_cols = ['SimFinId', 'Currency', 'Fiscal Year',
+                     'Fiscal Period',  'Restated Date',  'Shares (Diluted)']
+        df = df.drop(columns=drop_cols)
 
-    banks_income_df = pd.read_csv(
-        DATA_DIR/'banks_income.csv', index_col=['Ticker'])
+        income_dict[schema.title()] = df
 
-    format_dict = get_default_format(
-        banks_income_df, int_format=human_format, float_format=human_format)
-    for key, value in format_dict.items():
-        banks_income_df[key] = banks_income_df[key].apply(value)
+        # BALANCE SHEET
+        df = pd.read_csv(
+            DATA_DIR/f'{schema}_balance.csv', index_col=['Ticker'])
 
-    banks_income_df = banks_income_df.drop(columns=drop_cols)
+        format_dict = get_default_format(
+            df, int_format=human_format, float_format=human_format)
+        for key, value in format_dict.items():
+            df[key] = df[key].apply(value)
 
-    insurance_income_df = pd.read_csv(
-        DATA_DIR/'insurance_income.csv', index_col=['Ticker'])
+        drop_cols = ['SimFinId', 'Currency', 'Fiscal Year',
+                     'Fiscal Period',  'Restated Date',  'Shares (Diluted)']
+        df = df.drop(columns=drop_cols)
 
-    format_dict = get_default_format(
-        insurance_income_df, int_format=human_format, float_format=human_format)
-    for key, value in format_dict.items():
-        insurance_income_df[key] = insurance_income_df[key].apply(value)
+        balance_dict[schema.title()] = df
 
-    insurance_income_df = insurance_income_df.drop(columns=drop_cols)
+        # CASH FLOW STATEMENT
+        df = pd.read_csv(
+            DATA_DIR/f'{schema}_cashflow.csv', index_col=['Ticker'])
 
-    # BALANCE SHEET
-    common_balance_df = pd.read_csv(
-        DATA_DIR/'common_balance.csv', index_col=['Ticker'])
+        format_dict = get_default_format(
+            df, int_format=human_format, float_format=human_format)
+        for key, value in format_dict.items():
+            df[key] = df[key].apply(
+                value)
 
-    format_dict = get_default_format(
-        common_balance_df, int_format=human_format, float_format=human_format)
-    for key, value in format_dict.items():
-        common_balance_df[key] = common_balance_df[key].apply(value)
+        drop_cols = ['SimFinId', 'Currency', 'Fiscal Year',
+                     'Fiscal Period',  'Restated Date',  'Shares (Diluted)']
+        df = df.drop(columns=drop_cols)
+        cashflow_dict[schema.title()] = df
 
-    common_balance_df = common_balance_df.drop(columns=drop_cols)
+        # FUNDAMENTAL RATIOS & FIGURES
+        df = pd.read_csv(DATA_DIR/f'{schema}_fundamental_derived.csv')
 
-    banks_balance_df = pd.read_csv(
-        DATA_DIR/'banks_balance.csv', index_col=['Ticker'])
+        cols = ['Ticker', 'EBITDA', 'Total Debt',
+                'Free Cash Flow', 'Gross Profit Margin', 'Operating Margin',
+                'Net Profit Margin', 'Return on Equity', 'Return on Assets',
+                'Free Cash Flow to Net Income', 'Current Ratio',
+                'Liabilities to Equity Ratio', 'Debt Ratio',
+                'Earnings Per Share, Basic', 'Earnings Per Share, Diluted',
+                'Sales Per Share', 'Equity Per Share', 'Free Cash Flow Per Share',
+                'Dividends Per Share', 'Pietroski F-Score']
+        df = df[cols]
+        ratio_figure_dict[schema.title()] = df
 
-    format_dict = get_default_format(
-        banks_balance_df, int_format=human_format, float_format=human_format)
-    for key, value in format_dict.items():
-        banks_balance_df[key] = banks_balance_df[key].apply(value)
-
-    banks_balance_df = banks_balance_df.drop(columns=drop_cols)
-
-    insurance_balance_df = pd.read_csv(
-        DATA_DIR/'insurance_balance.csv', index_col=['Ticker'])
-
-    format_dict = get_default_format(
-        insurance_balance_df, int_format=human_format, float_format=human_format)
-    for key, value in format_dict.items():
-        insurance_balance_df[key] = insurance_balance_df[key].apply(
-            value)
-
-    insurance_balance_df = insurance_balance_df.drop(columns=drop_cols)
-
-    # CASH FLOW STATEMENT
-    common_cashflow_df = pd.read_csv(
-        DATA_DIR/'common_cashflow.csv', index_col=['Ticker'])
-
-    format_dict = get_default_format(
-        common_cashflow_df, int_format=human_format, float_format=human_format)
-    for key, value in format_dict.items():
-        common_cashflow_df[key] = common_cashflow_df[key].apply(
-            value)
-
-    common_cashflow_df = common_cashflow_df.drop(columns=drop_cols)
-
-    banks_cashflow_df = pd.read_csv(
-        DATA_DIR/'banks_cashflow.csv', index_col=['Ticker'])
-
-    format_dict = get_default_format(
-        banks_cashflow_df, int_format=human_format, float_format=human_format)
-    for key, value in format_dict.items():
-        banks_cashflow_df[key] = banks_cashflow_df[key].apply(
-            value)
-
-    banks_cashflow_df = banks_cashflow_df.drop(columns=drop_cols)
-
-    insurance_cashflow_df = pd.read_csv(
-        DATA_DIR/'insurance_cashflow.csv', index_col=['Ticker'])
-
-    format_dict = get_default_format(
-        insurance_cashflow_df, int_format=human_format, float_format=human_format)
-    for key, value in format_dict.items():
-        insurance_cashflow_df[key] = insurance_cashflow_df[key].apply(
-            value)
-
-    insurance_cashflow_df = insurance_cashflow_df.drop(columns=drop_cols)
-
-    data_dict = {
-        'Predictions': prediction_df,
-        'Features': {
-            'Common': common_features_df,
-            'Banks': banks_features_df,
-            'Insurance': insurance_features_df
-        },
-        'Similarity': {
-            'Common': common_sim_df,
-            'Banks': banks_sim_df,
-            'Insurance': insurance_sim_df
-        },
-        'Income': {
-            'Common': common_income_df,
-            'Banks': banks_income_df,
-            'Insurance': insurance_income_df
-        },
-        'Balance': {
-            'Common': common_balance_df,
-            'Banks': banks_balance_df,
-            'Insurance': insurance_balance_df
-        },
-        'Cashflow': {
-            'Common': common_cashflow_df,
-            'Banks': banks_cashflow_df,
-            'Insurance': insurance_cashflow_df
-        },
-        'Tickers': tickers,
-        'Company': company_df,
-        'Industry': industry_df,
-        'Share Ratio': stock_derived_df,
-        'Fundamental Figures': fundamental_derived_df
-    }
+    data_dict['Features'] = feature_dict
+    data_dict['Similarity'] = similarity_dict
+    data_dict['Income'] = income_dict
+    data_dict['Balance'] = balance_dict
+    data_dict['Cashflow'] = cashflow_dict
+    data_dict['Fundamental Figures'] = pd.concat(
+        [ratio_figure_dict['Common'], ratio_figure_dict['Banks'], ratio_figure_dict['Insurance']])
 
     return data_dict
 

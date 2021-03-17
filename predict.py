@@ -72,14 +72,14 @@ def predict_similiar(model, df, filename, number_of_features=15):
     return matrix_df
 
 
-def model_explainer(model, df):
-    df = df.copy()
+# def model_explainer(model, df):
+#     df = df.copy()
 
-    X = df.drop(columns=['Close', 'Dataset', 'Predicted Close'])
+#     X = df.drop(columns=['Close', 'Dataset', 'Predicted Close'])
 
-    # Filter Dataset to current Stock Prices Only
-    X = X[X.index.get_level_values(1) == X.index.get_level_values(1).max()]
+#     # Filter Dataset to current Stock Prices Only
+#     X = X[X.index.get_level_values(1) == X.index.get_level_values(1).max()]
 
-    explainer = shap.TreeExplainer(model)
+#     explainer = shap.TreeExplainer(model)
 
-    explainer(X)
+#     explainer(X)

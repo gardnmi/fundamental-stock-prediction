@@ -110,3 +110,24 @@ def human_format(num):
         return '{}{}'.format('{:f}'.format(num).rstrip('0').rstrip('.'), ['', 'K', 'M', 'B', 'T'][magnitude])
     else:
         return num
+
+
+def get_default_format(data: pd.DataFrame, int_format="{0:,.0f}".format, float_format="{0:,.2f}".format):
+    # https://awesome-streamlit.org/
+    """A dictionary of columns and formats for the Pandas DataFrame Styler
+
+    Arguments:
+        data {pd.DataFrame} -- A DataFrame of Data]
+
+    Returns:
+        Dict[str,str] -- A dictionary of default formats for the columns
+    """
+    format_dict = {}
+    for column in data.columns:
+        if data[column].dtype == "int64":
+            format_dict[column] = int_format
+        elif data[column].dtype == "float64":
+            format_dict[column] = float_format
+        else:
+            format_dict[column] = "{0:}".format
+    return format_dict
