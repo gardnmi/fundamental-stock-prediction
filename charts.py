@@ -83,14 +83,14 @@ def scatter_variance_chart(data):
 
     bins = np.array([-1, -0.15, 0.15, 999999999999])
 
-    labels = ['< -15%', 'within 15%', '> 15']
+    labels = ['< -15%', 'within 15%', '> 15%']
 
-    df['Predicted vs Close % Bin'] = pd.cut(
+    df['Predicted vs Close % '] = pd.cut(
         df['Predicted vs Close %'], bins=bins, labels=labels, include_lowest=True)
 
     # Formatting
     # Streamlit cannot handle categorical dtype
-    df['Predicted vs Close % Bin'] = df['Predicted vs Close % Bin'].astype(str)
+    df['Predicted vs Close % '] = df['Predicted vs Close % '].astype(str)
 
     df[['Close', 'Predicted Close']] = df[[
         'Close', 'Predicted Close']].round(0)
@@ -115,7 +115,7 @@ def scatter_variance_chart(data):
     c = alt.Chart(df).mark_point(size=60).encode(
         x='Close',
         y='Predicted Close',
-        color=alt.Color('Predicted vs Close % Bin',
+        color=alt.Color('Predicted vs Close % ',
                         legend=alt.Legend(orient='bottom')),
         tooltip=[
             'Company Name',

@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 import streamlit as st
 import yfinance as yf
+import yahoo_fin.stock_info as si
+from yahoo_fin import news
 import shap
 import pickle
 import matplotlib.pyplot as plt
@@ -24,7 +26,11 @@ MODELS_DIR = pathlib.Path('./models')
 # Add Filters to Scatter Plot in Sidebar (use the derived csv's)
 # Add Linked Brushing Scatter Plot https://altair-viz.github.io/gallery/scatter_linked_brush.html
 # Implement News Feed https://github.com/kotartemiy/pygooglenews
-
+# use yahoo_fin for filters
+#   -get_day_gainers
+#   -get_day_losers
+#   -get_day_most_active
+#   -get_earnings_in_date_range
 
 # Page Settings
 st.set_page_config(
@@ -247,6 +253,9 @@ with st.beta_container():
     for ticker in tickers:
         yticker = yf.Ticker(f'{ticker}')
         st.subheader(f'**{ticker_dic[ticker]}**')
+        st.markdown(
+            f'''<p><small>Current Price: <code>{round(si.get_live_price(ticker),2)}
+            </code></small></p>''', unsafe_allow_html=True)
 
         with st.beta_expander("Company Info", expanded=True):
             st.markdown(f"> {yticker.info['longBusinessSummary']}")
@@ -295,7 +304,7 @@ with st.beta_container():
             st.pyplot()
 
             # SIMILIAR STOCKS
-            st.subheader('10 Most Similiar Stocks')
+            st.subheader('Similiar Stocks')
             st.markdown(
                 '''<p><small>The 10 most similiar stocks based on the <code>cosine similarity
                 </code> of there <code>per share</code> fundamentals</small></p>''',
@@ -359,7 +368,7 @@ with st.beta_container():
 st.markdown("<div align='center'><br>"
             "<img src='https://img.shields.io/badge/MADE%20WITH-PYTHON%20-red?style=for-the-badge'"
             "alt='API stability' height='25'/>"
-            "<img src='https://img.shields.io/badge/DATA%20FROM-SIMFIN-blue?style=for-the-badge'"
+            "<img src='https://img.shields.io/badge/DATA%20FROM-SIMFIN%20AND%20YAHOO_FIN-blue?style=for-the-badge'"
             "alt='API stability' height='25'/>"
             "<img src='https://img.shields.io/badge/DASHBOARDING%20WITH-Streamlit-green?style=for-the-badge'"
             "alt='API stability' height='25'/></div>", unsafe_allow_html=True)
