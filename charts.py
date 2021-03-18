@@ -1,5 +1,7 @@
 import altair as alt
-import streamlit as st
+import numpy as np
+import pandas as pd
+from utils import human_format
 
 
 def stock_line_chart(df):
@@ -56,12 +58,61 @@ def stock_line_chart(df):
     return c
 
 
-def scatter_variance_chart(df):
-    source = df.copy()
-    # source = source[source.index.get_level_values(
-    #     1) == source.index.get_level_values(1).max()]
-    source = source.reset_index()
-    c = alt.Chart(source).mark_point(size=60).encode(
+def scatter_variance_chart(data):
+
+    # Add dataframes
+    predictions_df = data['Predictions']
+    company_df = data['Company'].set_index('Ticker')
+    industry_df = data['Industry']
+    share_ratio_df = data['Share Ratio']
+    fund_figures_df = data['Fundamental Figures']
+
+    # Reduce
+    df = predictions_df[predictions_df.index.get_level_values(
+        1) == predictions_df.index.get_level_values(1).max()]
+
+    # Merge
+    df = df.join(company_df).reset_index()
+    df = df.merge(industry_df, on='IndustryId', how='inner')
+    df = df.merge(share_ratio_df, on='Ticker', how='inner')
+    df = df.merge(fund_figures_df, on='Ticker', how='inner')
+
+    # Calculated Columns
+    df['Predicted vs Close %'] = (
+        df['Close'] - df['Predicted Close']) / df['Predicted Close']
+
+    bins = np.array([-1, -0.15, 0.15, 999999999999])
+
+    labels = ['< -15%', 'within 15%', '> 15']
+
+    df['Predicted vs Close % Bin'] = pd.cut(
+        df['Predicted vs Close %'], bins=bins, labels=labels, include_lowest=True)
+
+    # Formatting
+    # Streamlit cannot handle categorical dtype
+    df['Predicted vs Close % Bin'] = df['Predicted vs Close % Bin'].astype(str)
+
+    df[['Close', 'Predicted Close']] = df[[
+        'Close', 'Predicted Close']].round(0)
+
+    cols = ['Price to Earnings Ratio (ttm)', 'Price to Sales Ratio (ttm)', 'Price to Book Value',
+            'Price to Free Cash Flow (ttm)', 'EV/EBITDA', 'EV/Sales', 'EV/FCF', 'Book to Market Value',
+            'Operating Income/EV', 'Gross Profit Margin', 'Operating Margin', 'Net Profit Margin',
+            'Return on Equity', 'Return on Assets', 'Free Cash Flow to Net Income', 'Current Ratio',
+            'Liabilities to Equity Ratio', 'Debt Ratio', 'Earnings Per Share, Basic',
+            'Earnings Per Share, Diluted', 'Sales Per Share', 'Equity Per Share', 'Free Cash Flow Per Share',
+            'Dividends Per Share']
+
+    df[cols] = df[cols].round(2)
+
+    cols = ['EBITDA', 'Total Debt', 'Free Cash Flow',
+            'Market-Cap', 'Enterprise Value']
+
+    for col in cols:
+        df[f'{col} ($)'] = df[col].map(human_format)
+
+    df = df.reset_index()
+    c = alt.Chart(df).mark_point(size=60).encode(
         x='Close',
         y='Predicted Close',
         color=alt.Color('Predicted vs Close % Bin',

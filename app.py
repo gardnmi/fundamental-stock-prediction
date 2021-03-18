@@ -21,13 +21,8 @@ MODELS_DIR = pathlib.Path('./models')
 #   - Small Cap Stocks
 #   - S&P 500, DOW, NASDAQ (Index etc)
 #   - 30,60,90,180,360 MVA
-# Format DataFrames https://discuss.streamlit.io/t/cant-adjust-dataframes-decimal-places/1949/4
 # Add Filters to Scatter Plot in Sidebar (use the derived csv's)
-# Add SHAP Explanations
-# Add YFinance Stock Description
 # Add Linked Brushing Scatter Plot https://altair-viz.github.io/gallery/scatter_linked_brush.html
-# News Feed API?
-# Replace SHAP with shapash
 # Implement News Feed https://github.com/kotartemiy/pygooglenews
 
 
@@ -168,66 +163,6 @@ def get_data():
     return data_dict
 
 
-@st.cache
-def transform_data(data):
-
-    # Add dataframes
-    predictions_df = data['Predictions']
-    company_df = data['Company'].set_index('Ticker')
-    industry_df = data['Industry']
-    share_ratio_df = data['Share Ratio']
-    fund_figures_df = data['Fundamental Figures']
-
-    # Reduce
-    df = predictions_df[predictions_df.index.get_level_values(
-        1) == predictions_df.index.get_level_values(1).max()]
-
-    # Merge
-    df = df.join(company_df).reset_index()
-    df = df.merge(industry_df, on='IndustryId', how='inner')
-    df = df.merge(share_ratio_df, on='Ticker', how='inner')
-    df = df.merge(fund_figures_df, on='Ticker', how='inner')
-
-    # Calculated Columns
-    df['Predicted vs Close %'] = (
-        df['Close'] - df['Predicted Close']) / df['Predicted Close']
-
-    bins = np.array([-1, -0.15, 0.15, 999999999999])
-
-    labels = ['< -15%', 'within 15%', '> 15']
-
-    df['Predicted vs Close % Bin'] = pd.cut(
-        df['Predicted vs Close %'], bins=bins, labels=labels, include_lowest=True)
-
-    # Formatting
-    # Streamlit cannot handle categorical dtype
-    df['Predicted vs Close % Bin'] = df['Predicted vs Close % Bin'].astype(str)
-
-    df[['Close', 'Predicted Close']] = df[[
-        'Close', 'Predicted Close']].round(0)
-
-    cols = ['Price to Earnings Ratio (ttm)', 'Price to Sales Ratio (ttm)', 'Price to Book Value',
-            'Price to Free Cash Flow (ttm)', 'EV/EBITDA', 'EV/Sales', 'EV/FCF', 'Book to Market Value',
-            'Operating Income/EV', 'Gross Profit Margin', 'Operating Margin', 'Net Profit Margin',
-            'Return on Equity', 'Return on Assets', 'Free Cash Flow to Net Income', 'Current Ratio',
-            'Liabilities to Equity Ratio', 'Debt Ratio', 'Earnings Per Share, Basic',
-            'Earnings Per Share, Diluted', 'Sales Per Share', 'Equity Per Share', 'Free Cash Flow Per Share',
-            'Dividends Per Share']
-
-    df[cols] = df[cols].round(2)
-
-    cols = ['EBITDA', 'Total Debt', 'Free Cash Flow',
-            'Market-Cap', 'Enterprise Value']
-
-    for col in cols:
-        df[f'{col} ($)'] = df[col].map(human_format)
-
-    # df['Market-Cap (Readable)'] = df['Market-Cap'].map(human_format)
-    # df['Enterprise Value (Readable)'] = df['Enterprise Value'].map(
-    #     human_format)
-    return df
-
-
 def get_models():
 
     common_model = pickle.load(open(MODELS_DIR/'common_model.pkl', 'rb'))
@@ -245,7 +180,6 @@ def get_models():
 # Loads Data
 data = get_data()
 models = get_models()
-df = transform_data(data)
 
 # Variables
 COMMON_TICKERS = data['Features']['Common'].index
@@ -281,63 +215,58 @@ COMMON_CASHFLOW = data['Cashflow']['Common']
 BANK_CASHFLOW = data['Cashflow']['Banks']
 INSURANCE_CASHFLOW = data['Cashflow']['Insurance']
 
+COMPANY = data['Company'].set_index('Ticker')
+INDUSTRY = data['Industry']
+SHARE_RATIO = data['Share Ratio']
+FUNDAMENTAL_FIGURES = data['Fundamental Figures']
+PREDICTIONS = data['Predictions']
+CURRENT_PREDICTIONS = PREDICTIONS[PREDICTIONS.index.get_level_values(
+    1) == PREDICTIONS.index.get_level_values(1).max()].reset_index(level=1, drop=True)
+
 # Header
 with st.beta_container():
     st.title('Random Forrest Stock Valuation')
     st.markdown(
-        'A machine learning approach to valuing stocks based on Trailing Twelve Month (TTM) Fundamentals')
-
-    # st.markdown("<div align='center'><br>"
-    #             "<img src='https://img.shields.io/badge/MADE%20WITH-PYTHON%20-red?style=for-the-badge'"
-    #             "alt='API stability' height='25'/>"
-    #             "<img src='https://img.shields.io/badge/DATA%20FROM-SIMFIN-blue?style=for-the-badge'"
-    #             "alt='API stability' height='25'/>"
-    #             "<img src='https://img.shields.io/badge/DASHBOARDING%20WITH-Streamlit-green?style=for-the-badge'"
-    #             "alt='API stability' height='25'/></div>", unsafe_allow_html=True)
-    # st.write('---')
+        '''A machine learning approach to valuing stocks based on Trailing Twelve Month (TTM) 
+        Fundamentals''')
 
 # STOCK FINDER
 with st.beta_container():
 
-    c = scatter_variance_chart(df)
+    c = scatter_variance_chart(data)
     st.altair_chart(c, use_container_width=True)
-
-    with st.beta_expander("See explanation"):
-        st.write("""
-            TEXT GOES HERE
-        """)
-        st.image("https://static.streamlit.io/examples/dice.jpg")
-
-    # st.write('---')
 
 
 # STOCK ANALYSIS
 with st.beta_container():
-
+    st.header('** Stock Evalutation **')
     ticker_dic = ALL_TICKERS['Company Name (Ticker)'].to_dict()
-    tickers = st.multiselect("Choose ticker", ALL_TICKERS.index,
+    tickers = st.multiselect("Choose ticker(s)", ALL_TICKERS.index.to_list(), default=['ELY'],
                              format_func=ticker_dic.get)
 
     for ticker in tickers:
         yticker = yf.Ticker(f'{ticker}')
-        st.header(f'**{ticker_dic[ticker]}**')
+        st.subheader(f'**{ticker_dic[ticker]}**')
 
-        with st.beta_expander("Company Info"):
+        with st.beta_expander("Company Info", expanded=True):
             st.markdown(f"> {yticker.info['longBusinessSummary']}")
         st.markdown(' ', unsafe_allow_html=True)
 
         # LINE CHART
         st.subheader('Close vs Valuation')
-        df = data['Predictions'].loc[ticker]
+        df = PREDICTIONS.loc[ticker]
         c = stock_line_chart(df)
         st.altair_chart(c, use_container_width=True)
 
         if ticker in COMMON_TICKERS:
-            st.subheader('Financials')
-            st.write(
-                f"Publish Date: `{COMMON_INCOME.loc[ticker]['Publish Date']}`")
-            st.write(
-                f"Shares (Basic): `{COMMON_INCOME.loc[ticker]['Shares (Basic)']}`")
+            st.subheader('Financial Statements')
+            st.markdown(
+                f'''<p><small>
+                Publish Date: <code>{COMMON_INCOME.loc[ticker]['Publish Date']}</code>
+                <br>
+                Shares (Basic): <code>{COMMON_INCOME.loc[ticker]['Shares (Basic)']}</code>
+                </small></p>  
+                ''', unsafe_allow_html=True)
 
             income, balance, cashflow = st.beta_columns(3)
             with income:
@@ -353,14 +282,55 @@ with st.beta_container():
                 st.table(COMMON_CASHFLOW.loc[ticker].iloc[2:].rename(
                     'TTM').dropna())
 
+            # WATEFALL PLOT
+            st.subheader('Prediction Explanation')
+            st.markdown('''<p><small>The waterfall plot is designed to visually display how 
+                           the values of each feature moves the <code>average</code> stock value to the 
+                           <code>predicted</code> stock value.
+                           </small></p>''', unsafe_allow_html=True)
+
             shap_values = COMMON_EXPLAINER(
                 COMMON_FEATURES.loc[slice(ticker, ticker), :])[0]
-            st.pyplot(shap.waterfall_plot(shap_values))
+            shap.waterfall_plot(shap_values, max_display=20)
+            st.pyplot()
 
-            # Make an Input to Expand Beyond 5
-            st.markdown('### 5 Most Similiar Stocks')
-            st.dataframe(COMMON_SIM.loc[ticker].sort_values(
-                ascending=False).iloc[1:6])
+            # SIMILIAR STOCKS
+            st.subheader('10 Most Similiar Stocks')
+            st.markdown(
+                '''<p><small>The 10 most similiar stocks based on the <code>cosine similarity
+                </code> of there <code>per share</code> fundamentals</small></p>''',
+                unsafe_allow_html=True)
+
+            cols = ['Ticker', 'Close', 'Predicted Close', 'Company Name', 'Sector', 'Industry', 'Market-Cap', 'Enterprise Value',
+                    'Price to Earnings Ratio (ttm)', 'Price to Sales Ratio (ttm)', 'Price to Book Value',
+                    'Price to Free Cash Flow (ttm)', 'EV/EBITDA', 'EV/Sales', 'EV/FCF', 'Book to Market Value',
+                    'Operating Income/EV', 'EBITDA', 'Total Debt', 'Free Cash Flow', 'Gross Profit Margin',
+                    'Operating Margin', 'Net Profit Margin', 'Return on Equity',
+                    'Return on Assets', 'Free Cash Flow to Net Income', 'Current Ratio', 'Liabilities to Equity Ratio',
+                    'Debt Ratio', 'Earnings Per Share, Basic', 'Earnings Per Share, Diluted', 'Sales Per Share',
+                    'Equity Per Share', 'Free Cash Flow Per Share', 'Dividends Per Share', 'Pietroski F-Score']
+
+            df = COMMON_SIM.loc[ticker].sort_values(
+                ascending=False).iloc[1:11].to_frame()
+            df.index.name = 'Ticker'
+            df = df.join(CURRENT_PREDICTIONS)
+            df = df.join(COMPANY).reset_index()
+            df = df.merge(INDUSTRY, on='IndustryId', how='inner')
+            df = df.merge(SHARE_RATIO, on='Ticker', how='inner')
+            df = df.merge(FUNDAMENTAL_FIGURES, on='Ticker', how='inner')
+            df = df[cols]
+            df = df.set_index('Ticker')
+            manual_cols = ['Market-Cap', 'Enterprise Value',
+                           'EBITDA', 'Total Debt', 'Free Cash Flow']
+
+            format_dict = get_default_format(df,
+                                             int_format=human_format,
+                                             manual_cols=manual_cols,
+                                             manual_format=human_format)
+            for key, value in format_dict.items():
+                df[key] = df[key].apply(
+                    value)
+            st.dataframe(df)
 
         elif ticker in BANK_TICKERS:
             pass
@@ -369,24 +339,28 @@ with st.beta_container():
         else:
             pass
 
-        st.write('---')
 
 # Feature Importance
 with st.beta_container():
-    st.write('---')
     # https://github.com/slundberg/shap
     # explainer = shap.TreeExplainer(COMMON_MODEL)
     shap_values = COMMON_EXPLAINER(COMMON_FEATURES)
-    st.markdown('### Feature Importance')
+    st.subheader('Feature Importance')
+    st.markdown(
+        '''<p><small>The relative importance of each <code>fundamental feature</code> 
+        when making a prediction</small></p>''', unsafe_allow_html=True)
+
     shap.plots.bar(shap_values, max_display=15)
     plt.xlabel("Average Absolute Feature Price Movement")
     st.set_option('deprecation.showPyplotGlobalUse', False)
     st.pyplot()
 
-    with st.beta_expander("See explanation"):
-        st.write("""
-            The chart above shows some numbers I picked for you.
-            I rolled actual dice for these, so they're *guaranteed* to
-            be random.
-        """)
-        st.image("https://static.streamlit.io/examples/dice.jpg")
+
+st.markdown("<div align='center'><br>"
+            "<img src='https://img.shields.io/badge/MADE%20WITH-PYTHON%20-red?style=for-the-badge'"
+            "alt='API stability' height='25'/>"
+            "<img src='https://img.shields.io/badge/DATA%20FROM-SIMFIN-blue?style=for-the-badge'"
+            "alt='API stability' height='25'/>"
+            "<img src='https://img.shields.io/badge/DASHBOARDING%20WITH-Streamlit-green?style=for-the-badge'"
+            "alt='API stability' height='25'/></div>", unsafe_allow_html=True)
+st.write('---')

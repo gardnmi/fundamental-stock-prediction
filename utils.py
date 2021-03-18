@@ -112,7 +112,7 @@ def human_format(num):
         return num
 
 
-def get_default_format(data: pd.DataFrame, int_format="{0:,.0f}".format, float_format="{0:,.2f}".format):
+def get_default_format(data, int_format="{0:,.0f}".format, float_format="{0:,.2f}".format, manual_cols=[], manual_format="{0:,.2f}".format):
     # https://awesome-streamlit.org/
     """A dictionary of columns and formats for the Pandas DataFrame Styler
 
@@ -124,7 +124,9 @@ def get_default_format(data: pd.DataFrame, int_format="{0:,.0f}".format, float_f
     """
     format_dict = {}
     for column in data.columns:
-        if data[column].dtype == "int64":
+        if column in manual_cols:
+            format_dict[column] = manual_format
+        elif data[column].dtype == "int64":
             format_dict[column] = int_format
         elif data[column].dtype == "float64":
             format_dict[column] = float_format
