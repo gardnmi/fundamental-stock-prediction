@@ -58,7 +58,7 @@ def stock_line_chart(df):
     return c
 
 
-def scatter_variance_chart(data):
+def scatter_variance_chart(data, preset_tickers, filters):
 
     # Add dataframes
     predictions_df = data['Predictions']
@@ -67,11 +67,65 @@ def scatter_variance_chart(data):
     share_ratio_df = data['Share Ratio']
     fund_figures_df = data['Fundamental Figures']
 
-    # Reduce
-    df = predictions_df[predictions_df.index.get_level_values(
+    # PRESETS
+    if preset_tickers:
+        mask = predictions_df.index.get_level_values(0).isin(preset_tickers)
+        predictions_df = predictions_df[mask]
+
+    # Reduce to the Latest Prices
+    predictions_df = predictions_df[predictions_df.index.get_level_values(
         1) == predictions_df.index.get_level_values(1).max()]
 
+    # FILTERS
+    # Sector
+    if filters['Sector'] != 'All':
+        industry_df = industry_df[industry_df['Sector'].eq(
+            filters['Sector'])]
+
+    # Industry
+    if filters['Industry'] != 'All':
+        industry_df = industry_df[industry_df['Industry'].eq(
+            filters['Industry'])]
+
+    # Stock Price
+    mask = (predictions_df['Close'] >= filters['Stock Price'][0]) & (
+        predictions_df['Close'] <= filters['Stock Price'][1])
+    predictions_df = predictions_df[mask]
+
+    # Market Cap
+    mask = (share_ratio_df['Market-Cap'] >= filters['Market Cap'][0]
+            ) & (share_ratio_df['Market-Cap'] <= filters['Market Cap'][1])
+    share_ratio_df = share_ratio_df[mask]
+
+    # Free Cash Flow
+    mask = (fund_figures_df['Free Cash Flow'] >= filters['Free Cash Flow'][0]) & (
+        fund_figures_df['Free Cash Flow'] <= filters['Free Cash Flow'][1])
+    fund_figures_df = fund_figures_df[mask]
+
+    # Total Debt
+    mask = (fund_figures_df['Total Debt'] >= filters['Total Debt'][0]) & (
+        fund_figures_df['Total Debt'] <= filters['Total Debt'][1])
+    fund_figures_df = fund_figures_df[mask]
+
+    # Industry
+    if filters['Dividend']:
+        mask = predictions_df.index.get_level_values(
+            0).isin(filters['Dividend'])
+        predictions_df = predictions_df[mask]
+
+    # F-Score
+    if filters['F-Score'] != 'All':
+        fund_figures_df = fund_figures_df[fund_figures_df['Pietroski F-Score'].eq(
+            filters['F-Score'])]
+
+    # Custom Tickers
+    if len(filters['Custom Tickers']) > 0:
+        mask = predictions_df.index.get_level_values(
+            0).isin(filters['Custom Tickers'])
+        predictions_df = predictions_df[mask]
+
     # Merge
+    df = predictions_df
     df = df.join(company_df).reset_index()
     df = df.merge(industry_df, on='IndustryId', how='inner')
     df = df.merge(share_ratio_df, on='Ticker', how='inner')
@@ -112,7 +166,7 @@ def scatter_variance_chart(data):
         df[f'{col} ($)'] = df[col].map(human_format)
 
     df = df.reset_index()
-    c = alt.Chart(df).mark_point(size=60).encode(
+    c = alt.Chart(df).mark_point(size=150).encode(
         x='Close',
         y='Predicted Close',
         color=alt.Color('Predicted vs Close % ',
