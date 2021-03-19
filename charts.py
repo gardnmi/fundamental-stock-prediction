@@ -1,12 +1,91 @@
 import altair as alt
+from altair.vegalite.v4.schema.channels import Column
 import numpy as np
 import pandas as pd
 from utils import human_format
+import streamlit as st
+
+
+@st.cache(allow_output_mutation=True)
+def scatter_filter(data, preset_tickers, filters):
+    # Add dataframes
+    predictions_df = data['Predictions']
+    company_df = data['Company'].set_index('Ticker')
+    industry_df = data['Industry']
+    share_ratio_df = data['Share Ratio']
+    fund_figures_df = data['Fundamental Figures']
+
+    # PRESETS
+    if preset_tickers:
+        mask = predictions_df.index.get_level_values(0).isin(preset_tickers)
+        predictions_df = predictions_df[mask]
+
+    # Reduce to the Latest Prices
+    predictions_df = predictions_df[predictions_df.index.get_level_values(
+        1) == predictions_df.index.get_level_values(1).max()]
+
+    # FILTERS
+    # Sector
+    if filters['Sector'] != 'All':
+        industry_df = industry_df[industry_df['Sector'].eq(
+            filters['Sector'])]
+
+    # Industry
+    if filters['Industry'] != 'All':
+        industry_df = industry_df[industry_df['Industry'].eq(
+            filters['Industry'])]
+
+    # Stock Price
+    mask = (predictions_df['Close'] >= filters['Stock Price'][0]) & (
+        predictions_df['Close'] <= filters['Stock Price'][1])
+    predictions_df = predictions_df[mask]
+
+    # Market Cap
+    mask = (share_ratio_df['Market-Cap'] >= filters['Market Cap'][0]
+            ) & (share_ratio_df['Market-Cap'] <= filters['Market Cap'][1])
+    share_ratio_df = share_ratio_df[mask]
+
+    # Free Cash Flow
+    mask = (fund_figures_df['Free Cash Flow'] >= filters['Free Cash Flow'][0]) & (
+        fund_figures_df['Free Cash Flow'] <= filters['Free Cash Flow'][1])
+    fund_figures_df = fund_figures_df[mask]
+
+    # Total Debt
+    mask = (fund_figures_df['Total Debt'] >= filters['Total Debt'][0]) & (
+        fund_figures_df['Total Debt'] <= filters['Total Debt'][1])
+    fund_figures_df = fund_figures_df[mask]
+
+    # Dividends
+    if isinstance(filters['Dividend'], pd.Series):
+        mask = predictions_df.index.get_level_values(
+            0).isin(filters['Dividend'])
+        predictions_df = predictions_df[mask]
+
+    # F-Score
+    if filters['F-Score'] != 'All':
+        fund_figures_df = fund_figures_df[fund_figures_df['Pietroski F-Score'].eq(
+            filters['F-Score'])]
+
+    # Custom Tickers
+    if len(filters['Custom Tickers']) > 0:
+        mask = predictions_df.index.get_level_values(
+            0).isin(filters['Custom Tickers'])
+        predictions_df = predictions_df[mask]
+
+    # Merge
+    df = predictions_df
+    df = df.join(company_df).reset_index()
+    df = df.merge(industry_df, on='IndustryId', how='inner')
+    df = df.merge(share_ratio_df, on='Ticker', how='inner')
+    df = df.merge(fund_figures_df, on='Ticker', how='inner')
+
+    return df
 
 
 def stock_line_chart(df):
 
     source = df.copy()
+    source = source.rename(columns={'Close': '30 DMA Close'})
     source = source.round(0)
     source = source.reset_index().melt('Date', var_name='category', value_name='Price')
     # Create a selection that chooses the nearest point & selects based on x-value
@@ -58,95 +137,26 @@ def stock_line_chart(df):
     return c
 
 
-def scatter_variance_chart(data, preset_tickers, filters):
+def scatter_variance_chart(df):
 
-    # Add dataframes
-    predictions_df = data['Predictions']
-    company_df = data['Company'].set_index('Ticker')
-    industry_df = data['Industry']
-    share_ratio_df = data['Share Ratio']
-    fund_figures_df = data['Fundamental Figures']
-
-    # PRESETS
-    if preset_tickers:
-        mask = predictions_df.index.get_level_values(0).isin(preset_tickers)
-        predictions_df = predictions_df[mask]
-
-    # Reduce to the Latest Prices
-    predictions_df = predictions_df[predictions_df.index.get_level_values(
-        1) == predictions_df.index.get_level_values(1).max()]
-
-    # FILTERS
-    # Sector
-    if filters['Sector'] != 'All':
-        industry_df = industry_df[industry_df['Sector'].eq(
-            filters['Sector'])]
-
-    # Industry
-    if filters['Industry'] != 'All':
-        industry_df = industry_df[industry_df['Industry'].eq(
-            filters['Industry'])]
-
-    # Stock Price
-    mask = (predictions_df['Close'] >= filters['Stock Price'][0]) & (
-        predictions_df['Close'] <= filters['Stock Price'][1])
-    predictions_df = predictions_df[mask]
-
-    # Market Cap
-    mask = (share_ratio_df['Market-Cap'] >= filters['Market Cap'][0]
-            ) & (share_ratio_df['Market-Cap'] <= filters['Market Cap'][1])
-    share_ratio_df = share_ratio_df[mask]
-
-    # Free Cash Flow
-    mask = (fund_figures_df['Free Cash Flow'] >= filters['Free Cash Flow'][0]) & (
-        fund_figures_df['Free Cash Flow'] <= filters['Free Cash Flow'][1])
-    fund_figures_df = fund_figures_df[mask]
-
-    # Total Debt
-    mask = (fund_figures_df['Total Debt'] >= filters['Total Debt'][0]) & (
-        fund_figures_df['Total Debt'] <= filters['Total Debt'][1])
-    fund_figures_df = fund_figures_df[mask]
-
-    # Industry
-    if filters['Dividend']:
-        mask = predictions_df.index.get_level_values(
-            0).isin(filters['Dividend'])
-        predictions_df = predictions_df[mask]
-
-    # F-Score
-    if filters['F-Score'] != 'All':
-        fund_figures_df = fund_figures_df[fund_figures_df['Pietroski F-Score'].eq(
-            filters['F-Score'])]
-
-    # Custom Tickers
-    if len(filters['Custom Tickers']) > 0:
-        mask = predictions_df.index.get_level_values(
-            0).isin(filters['Custom Tickers'])
-        predictions_df = predictions_df[mask]
-
-    # Merge
-    df = predictions_df
-    df = df.join(company_df).reset_index()
-    df = df.merge(industry_df, on='IndustryId', how='inner')
-    df = df.merge(share_ratio_df, on='Ticker', how='inner')
-    df = df.merge(fund_figures_df, on='Ticker', how='inner')
-
+    source = df.copy()
     # Calculated Columns
-    df['Predicted vs Close %'] = (
-        df['Close'] - df['Predicted Close']) / df['Predicted Close']
+    source['Predicted vs Close %'] = (
+        source['Close'] - source['Predicted Close']) / source['Predicted Close']
 
     bins = np.array([-1, -0.15, 0.15, 999999999999])
 
     labels = ['< -15%', 'within 15%', '> 15%']
 
-    df['Predicted vs Close % '] = pd.cut(
-        df['Predicted vs Close %'], bins=bins, labels=labels, include_lowest=True)
+    source['Predicted vs Close % '] = pd.cut(
+        source['Predicted vs Close %'], bins=bins, labels=labels, include_lowest=True)
 
     # Formatting
     # Streamlit cannot handle categorical dtype
-    df['Predicted vs Close % '] = df['Predicted vs Close % '].astype(str)
+    source['Predicted vs Close % '] = source['Predicted vs Close % '].astype(
+        str)
 
-    df[['Close', 'Predicted Close']] = df[[
+    source[['Close', 'Predicted Close']] = source[[
         'Close', 'Predicted Close']].round(0)
 
     cols = ['Price to Earnings Ratio (ttm)', 'Price to Sales Ratio (ttm)', 'Price to Book Value',
@@ -157,17 +167,19 @@ def scatter_variance_chart(data, preset_tickers, filters):
             'Earnings Per Share, Diluted', 'Sales Per Share', 'Equity Per Share', 'Free Cash Flow Per Share',
             'Dividends Per Share']
 
-    df[cols] = df[cols].round(2)
+    source[cols] = source[cols].round(2)
 
     cols = ['EBITDA', 'Total Debt', 'Free Cash Flow',
             'Market-Cap', 'Enterprise Value']
 
     for col in cols:
-        df[f'{col} ($)'] = df[col].map(human_format)
+        source[f'{col} ($)'] = source[col].map(human_format)
 
-    df = df.reset_index()
-    c = alt.Chart(df).mark_point(size=150).encode(
-        x='Close',
+    source = source.reset_index()
+    source = source.rename(columns={'Close': '30 DMA Close'})
+
+    c = alt.Chart(source).mark_point(size=150).encode(
+        x='30 DMA Close',
         y='Predicted Close',
         color=alt.Color('Predicted vs Close % ',
                         legend=alt.Legend(orient='bottom')),
@@ -176,7 +188,7 @@ def scatter_variance_chart(data, preset_tickers, filters):
             'Ticker',
             'Sector',
             'Industry',
-            'Close',
+            '30 DMA Close',
             'Predicted Close',
             alt.Tooltip('Predicted vs Close %:Q', format='.0%'),
             'Market-Cap ($)',

@@ -9,7 +9,7 @@ import shap
 import pickle
 import matplotlib.pyplot as plt
 import pathlib
-from charts import stock_line_chart, scatter_variance_chart
+from charts import stock_line_chart, scatter_variance_chart, scatter_filter
 from datetime import datetime
 from time import mktime
 import reticker
@@ -236,7 +236,7 @@ with st.beta_container():
             f'''<p><small>You can support by <a href="https://www.buymeacoffee.com/gardnmi">
             buying me a coffee</a>☕️</small></p>''', unsafe_allow_html=True)
 
-    with st.sidebar.beta_expander("About:", expanded=False):
+    with st.sidebar.beta_expander("About:", expanded=True):
         st.markdown(
             f'''<p><small>Traditional valuation models such as DCF are a time consuming process
             that requires a lot of assumptions as inputs. This project aims to simplify and generalize  stock valuation
@@ -366,14 +366,14 @@ with st.beta_container():
                                          )
 
         bool = st.checkbox(
-            "Divindend Stocks", value=False, help='''A dividend is the distribution of some of a company's earnings to 
+            "Dividend Stocks", value=False, help='''A dividend is the distribution of some of a company's earnings to 
                                                      a class of its shareholders, as determined by the company's board of 
                                                      directors. Common shareholders of dividend-paying companies are typically 
                                                      eligible as long as they own the stock before the ex-dividend date. 
                                                      Dividends may be paid out as cash or in the form of additional stock.
                                                      \n https://www.investopedia.com/terms/d/dividend.asp''')
         if bool:
-            dividend_tickers = FUNDAMENTAL_FIGURES[FUNDAMENTAL_FIGURES['Dividens Per Share'].notnull(
+            dividend_tickers = FUNDAMENTAL_FIGURES[FUNDAMENTAL_FIGURES['Dividends Per Share'].notnull(
             )]['Ticker']
         else:
             dividend_tickers = False
@@ -419,6 +419,7 @@ with st.beta_container():
         feature_importance = st.checkbox(
             'Feature Importance', value=True)
 
+
 # DISCOVER
 with st.beta_container():
     st.header('** Discover: **')
@@ -448,17 +449,18 @@ with st.beta_container():
     if preset_tickers:
         try:
             preset_tickers = preset_functions[presets]()
-            preset_tickers = preset_tickers['Symbol'].to_list()
+
+            # Some Functions Return a DataFrame and not a List
+            if isinstance(preset_tickers, pd.DataFrame):
+                preset_tickers = preset_tickers['Symbol'].to_list()
+
         except:
             preset_tickers = False
             st.write(
                 f"`There is an issue with the {presets} preset.  Please choose another`")
 
-    # Some Presets Return a DataFrame
-    if isinstance(object, pd.DataFrame):
-        preset_tickers = preset_tickers['Symbol'].to_list()
-
-    c = scatter_variance_chart(data, preset_tickers, filters)
+    df = scatter_filter(data, preset_tickers, filters)
+    c = scatter_variance_chart(df)
     st.altair_chart(c, use_container_width=True)
 
 
