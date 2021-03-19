@@ -26,4 +26,5 @@ explainer = RegressionExplainer(model, X, y)
 db = ExplainerDashboard(explainer, title="Stock Valuation Explainer")
 db.to_yaml("dashboard.yaml", explainerfile="explainer.joblib",
            dump_explainer=True)
-server = db.flask_server()
+
+app = db.flask_server()
