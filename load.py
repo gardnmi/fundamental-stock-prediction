@@ -3,6 +3,7 @@ import numpy as np
 import simfin as sf
 from simfin.names import *
 import pathlib
+from category_encoders import OrdinalEncoder
 
 DATA_DIR = pathlib.Path('./data')
 
@@ -271,6 +272,20 @@ def load_dataset(refresh_days=1,
 
     df[per_share_cols] = df[per_share_cols].div(
         df['Shares (Diluted)'], axis=0)
+
+    # Add Company and Industry Information and Categorize
+    df = df.join(company_df).merge(industry_df, left_on='IndustryId', right_index=True).drop(
+        columns=['IndustryId', 'Company Name', 'SimFinId'])
+
+    categorical_features = [
+        col for col in df.columns if df[col].dtype == 'object']
+
+    encoder = OrdinalEncoder(
+        cols=categorical_features,
+        handle_unknown='ignore',
+        return_df=True).fit(df)
+
+    df = encoder.transform(df)
 
     # Sort
     df = df.sort_index(level=['Ticker', 'Date'], ascending=[1, 1])

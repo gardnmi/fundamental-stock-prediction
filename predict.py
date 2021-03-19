@@ -34,6 +34,7 @@ def train(df, winsor_quantile, model_name, feature_name, param):
 
     # Save Features for SHAP
     X.to_csv(DATA_DIR/f'{feature_name}_features.csv')
+    y.to_csv(DATA_DIR/f'{feature_name}_target.csv')
 
     return model
 
@@ -65,7 +66,8 @@ def predict_similiar(model, df, filename, number_of_features=15):
 
     similarity_matrix = cosine_similarity(X[features])
 
-    matrix_df = pd.DataFrame(similarity_matrix, index=tickers, columns=tickers)
+    matrix_df = pd.DataFrame(
+        similarity_matrix, index=tickers, columns=tickers)
 
     matrix_df.to_csv(DATA_DIR/f'{filename}.csv')
 

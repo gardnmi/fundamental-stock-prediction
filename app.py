@@ -20,8 +20,7 @@ MODELS_DIR = pathlib.Path('./models')
 extractor = reticker.TickerExtractor()
 
 # TODO
-# Create Upload for Custom Preset
-# Add Filters to Scatter Plot in Sidebar (use the derived csv's)
+# Refractor the ticker loop in Analysis for Commmon, Bank, Insurance
 # Add Linked Brushing Scatter Plot https://altair-viz.github.io/gallery/scatter_linked_brush.html
 
 # Page Settings
@@ -179,7 +178,7 @@ def get_models():
 data = get_data()
 models = get_models()
 
-# Variables
+# Variables (REMOVE THIS WHEN GOING TO PRODUCTION)
 COMMON_TICKERS = data['Features']['Common'].index
 BANK_TICKERS = data['Features']['Banks'].index
 INSURANCE_TICKERS = data['Features']['Insurance'].index
@@ -428,6 +427,12 @@ with st.beta_container():
         num_news = st.slider('Number of News Articles',
                              1, 10, value=5, step=1,
                              help='Number of Articles to Display in the News Feed Section')
+
+    #### CONTACT ####
+    with st.sidebar.beta_expander("Contact:", expanded=False):
+        st.markdown(''' - [Github](https://github.com/gardnmi/fundamental-stock-prediction)
+                        - [LinkedIn](https://www.linkedin.com/in/michael-gardner-38a29658/)
+             ''')
 
 
 #### DISCOVER ####
