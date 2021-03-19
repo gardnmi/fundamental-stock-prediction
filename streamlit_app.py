@@ -222,20 +222,22 @@ CURRENT_PREDICTIONS = PREDICTIONS[PREDICTIONS.index.get_level_values(
     1) == PREDICTIONS.index.get_level_values(1).max()].reset_index(level=1, drop=True)
 
 
-# Header
+#### HEADER ####
 with st.beta_container():
     st.markdown('''
                    <h1>Stock Valuation</h1>
                    <small><code>A poor man's bloomberg terminal</code></small>
                    ''', unsafe_allow_html=True)
 
-# Sidebar
+#### SIDEBAR ####
 with st.beta_container():
+    #### SUPPORT ####
     with st.sidebar.beta_expander("Support:", expanded=True):
         st.markdown(
             f'''<p><small>You can support by <a href="https://www.buymeacoffee.com/gardnmi">
             buying me a coffee</a>☕️</small></p>''', unsafe_allow_html=True)
 
+    #### ABOUT ####
     with st.sidebar.beta_expander("About:", expanded=True):
         st.markdown(
             f'''<p><small>Traditional valuation models such as DCF are a time consuming process
@@ -243,6 +245,7 @@ with st.beta_container():
             using machine learning.  The predicted value, <code>predicted close</code>,
             uses the Trailing Twelve Month Fundamentals as features inputs</small></p>''', unsafe_allow_html=True)
 
+   #### HOT TO USE ####
     with st.sidebar.beta_expander("How to Use:", expanded=False):
         st.markdown(
             f'''<p><small>Find potential investments in in the Scatter Plot located in the
@@ -251,6 +254,7 @@ with st.beta_container():
             <p><small>Use the preset filters to filter down the scatter plot
             or customize the filter using the filters below.</small></p>''', unsafe_allow_html=True)
 
+    #### FILTERS ####
     with st.sidebar.beta_expander("Filters:", expanded=False):
         ticker_input = st.text_area(
             'Input Ticker(s)', help='''Tickers can be entered in any format and will 
@@ -399,10 +403,10 @@ with st.beta_container():
             'Custom Tickers': custom_tickers
         }
 
+    #### DISPLAY OPTIONS ####
     with st.sidebar.beta_expander("Display Options:", expanded=False):
         st.markdown(
-            f'''<p><small>Uncheck to remove the subsection from the Analysis.  
-            This improves performance when looking at multiple tickers.</small></p>''', unsafe_allow_html=True)
+            f'''<p><small>Uncheck to remove section from <code>Analysis</code>. </small></p>''', unsafe_allow_html=True)
 
         company_info = st.checkbox(
             'Company Info', value=True)
@@ -418,9 +422,15 @@ with st.beta_container():
             'News Feed', value=True)
         feature_importance = st.checkbox(
             'Feature Importance', value=True)
+        num_sim = st.slider('Number of Similar Stocks',
+                            1, 20, value=10, step=1,
+                            help='Number of Similar Stocks to Display in the Similar Stock Section')
+        num_news = st.slider('Number of News Articles',
+                             1, 10, value=5, step=1,
+                             help='Number of Articles to Display in the News Feed Section')
 
 
-# DISCOVER
+#### DISCOVER ####
 with st.beta_container():
     st.header('** Discover: **')
 
@@ -464,13 +474,16 @@ with st.beta_container():
     st.altair_chart(c, use_container_width=True)
 
 
-# ANALYSIS
+#### ANALYSIS ####
 with st.beta_container():
     st.header('** Analysis: **')
+
+    # TICKER DROP DOWN
     ticker_dic = ALL_TICKERS['Company Name (Ticker)'].to_dict()
     tickers = st.multiselect("Choose ticker(s)", ALL_TICKERS.index.to_list(), default=['ELY'],
                              format_func=ticker_dic.get, help='US Market Only')
     for ticker in tickers:
+        # COMPANY AND STOCK PRICE
         yticker = yf.Ticker(f'{ticker}')
         st.subheader(f'**{ticker_dic[ticker]}**')
         st.markdown(
@@ -494,6 +507,7 @@ with st.beta_container():
             st.table(si.get_analysts_info(ticker)[
                 'Growth Estimates'].set_index('Growth Estimates')[[ticker]].T)
 
+        # TODO TURN THIS INTO A FUNCTION THAT IS DYNAMIC
         if ticker in COMMON_TICKERS:
             # FINANCIAL STATEMENTS
             if financial_statements:
@@ -551,7 +565,7 @@ with st.beta_container():
                         'Equity Per Share', 'Free Cash Flow Per Share', 'Dividends Per Share', 'Pietroski F-Score']
 
                 df = COMMON_SIM.loc[ticker].sort_values(
-                    ascending=False).iloc[1:11].to_frame()
+                    ascending=False).iloc[1:num_sim+1].to_frame()
                 df.index.name = 'Ticker'
                 df = df.join(CURRENT_PREDICTIONS)
                 df = df.join(COMPANY).reset_index()
@@ -582,7 +596,7 @@ with st.beta_container():
         # NEWS FEED
         if news_feed:
             st.subheader('News Feed')
-            for article in news.get_yf_rss(ticker)[:5]:
+            for article in news.get_yf_rss(ticker)[:num_news+1]:
                 published_parsed = news.get_yf_rss(
                     'ELY')[0]['published_parsed']
                 published = datetime.fromtimestamp(
