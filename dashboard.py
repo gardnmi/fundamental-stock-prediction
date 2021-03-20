@@ -10,26 +10,26 @@ DATA_DIR = pathlib.Path('./data')
 MODELS_DIR = pathlib.Path('./models')
 
 
-model = pickle.load(open(MODELS_DIR/'general_model.pkl', 'rb'))
-y = pd.read_csv(DATA_DIR/'general_target.csv',
-                index_col=['Ticker']).drop(columns=['Date'])
-X = pd.read_csv(DATA_DIR/f'general_features.csv',
-                index_col=['Ticker']).drop(columns=['Date'])
+# model = pickle.load(open(MODELS_DIR/'general_model.pkl', 'rb'))
+# y = pd.read_csv(DATA_DIR/'general_target.csv',
+#                 index_col=['Ticker']).drop(columns=['Date'])
+# X = pd.read_csv(DATA_DIR/f'general_features.csv',
+#                 index_col=['Ticker']).drop(columns=['Date'])
 
-# Dashboard Explainer is fussy about Column Names
-X.columns = X.columns.str.replace('.', '')
-feature_names = model.get_booster().feature_names
-feature_names = [x.replace('.', '') for x in feature_names]
-model.get_booster().feature_names = feature_names
+# # Dashboard Explainer is fussy about Column Names
+# X.columns = X.columns.str.replace('.', '')
+# feature_names = model.get_booster().feature_names
+# feature_names = [x.replace('.', '') for x in feature_names]
+# model.get_booster().feature_names = feature_names
 
 
-explainer = RegressionExplainer(model, X, y)
+# explainer = RegressionExplainer(model, X, y)
 
-db = ExplainerDashboard(
-    explainer, title="Stock Valuation Explainer", shap_interaction=False, precision='float32', decision_trees=False)
+# db = ExplainerDashboard(
+#     explainer, title="Stock Valuation Explainer", shap_interaction=False, precision='float32', decision_trees=False)
 
-db.to_yaml("dashboard.yaml", explainerfile="explainer.joblib",
-           dump_explainer=True)
+# db.to_yaml("dashboard.yaml", explainerfile="explainer.joblib",
+#            dump_explainer=True)
 
 db = ExplainerDashboard.from_config("dashboard.yaml")
 app = db.flask_server()
