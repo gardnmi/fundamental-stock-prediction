@@ -245,6 +245,7 @@ with st.beta_container():
                 border-right: .15em solid white;
                 white-space: nowrap;
                 margin: 0 auto;
+                padding: 0.5em 0px 0.5em;
                 letter-spacing: .15em;
                 animation: typing 1.5s steps(40, end),
                 blink-caret .75s step-end infinite;
@@ -630,8 +631,7 @@ with st.beta_container():
         if similiar_stocks:
             st.subheader('Similiar Stocks')
             st.markdown(
-                '''<p><small>The 10 most similiar stocks based on the <code>cosine similarity
-                </code> of there <code>per share</code> fundamentals</small></p>''',
+                '''<p><small>The 10 most similiar stocks using <code>cosine similarity</small></p>''',
                 unsafe_allow_html=True)
 
             cols = ['Ticker', 'Close', 'Predicted Close', 'Company Name', 'Sector', 'Industry', 'Market-Cap', 'Enterprise Value',
