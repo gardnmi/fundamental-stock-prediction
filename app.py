@@ -13,11 +13,13 @@ from charts import stock_line_chart, scatter_variance_chart, scatter_filter
 from datetime import datetime
 from time import mktime
 import reticker
+from quotes import quotes
 
 
 DATA_DIR = pathlib.Path('./data')
 MODELS_DIR = pathlib.Path('./models')
 extractor = reticker.TickerExtractor()
+
 
 # TODO
 # Refractor the ticker loop in Analysis for Commmon, Bank, Insurance
@@ -236,6 +238,7 @@ CURRENT_PREDICTIONS = PREDICTIONS[PREDICTIONS.index.get_level_values(
 
 #### HEADER ####
 with st.beta_container():
+
     st.markdown('''
             <style>
             .typewriter h4 {
@@ -283,13 +286,14 @@ with st.beta_container():
 
             </style>
             <div>
-            <h1>Stock Valuation</h1>
+            <h1>Stock Valuation w/ Machine Learnimg</h1>
             </div>
             <div class="typewriter">
             <h4> &nbsp; A poor man's bloomberg terminal</h4>
             </div>
 
                    ''', unsafe_allow_html=True)
+    st.markdown(f'>{quotes[np.random.randint(len(quotes)-1)]}')
 
 #### SIDEBAR ####
 with st.beta_container():
