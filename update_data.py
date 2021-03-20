@@ -13,24 +13,24 @@ DATA_DIR = pathlib.Path('./data')
 
 # LOAD
 shareprices_df = load_shareprices(simfin_api_key=SIMFIN_API_KEY)
-common_df = load_dataset(
-    dataset='common', simfin_api_key=SIMFIN_API_KEY, shareprices_df=shareprices_df)
+general_df = load_dataset(
+    dataset='general', simfin_api_key=SIMFIN_API_KEY, shareprices_df=shareprices_df)
 banks_df = load_dataset(
     dataset='banks', simfin_api_key=SIMFIN_API_KEY, shareprices_df=shareprices_df)
 insurance_df = load_dataset(
     dataset='insurance', simfin_api_key=SIMFIN_API_KEY, shareprices_df=shareprices_df)
 
 # TRAIN
-common_model = train(common_df,
-                     winsor_quantile=0.01,
-                     model_name='common_model',
-                     feature_name='common',
-                     param=dict(learning_rate=0.01,
-                                max_depth=3,
-                                subsample=.5,
-                                colsample_bylevel=0.7,
-                                colsample_bytree=0.7,
-                                n_estimators=200))
+general_model = train(general_df,
+                      winsor_quantile=0.01,
+                      model_name='general_model',
+                      feature_name='general',
+                      param=dict(learning_rate=0.01,
+                                 max_depth=3,
+                                 subsample=.5,
+                                 colsample_bylevel=0.7,
+                                 colsample_bytree=0.7,
+                                 n_estimators=200))
 
 banks_model = train(banks_df,
                     winsor_quantile=0.05,
@@ -55,13 +55,13 @@ insurance_model = train(insurance_df,
                                    n_estimators=150))
 
 # PREDICT
-common_df = predict(common_model, common_df, 'common_predictions')
+general_df = predict(general_model, general_df, 'general_predictions')
 banks_df = predict(banks_model, banks_df, 'banks_predictions')
 insurance_df = predict(insurance_model, insurance_df, 'insurance_predictions')
 
 # PREDICT SIMILIAR STOCKS
-common_matrix_df = predict_similiar(
-    common_model, common_df, 'common_sim_matrix')
+general_matrix_df = predict_similiar(
+    general_model, general_df, 'general_sim_matrix')
 
 banks_matrix_df = predict_similiar(banks_model, banks_df, 'banks_sim_matrix')
 

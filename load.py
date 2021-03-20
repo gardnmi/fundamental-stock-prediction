@@ -32,7 +32,7 @@ def load_shareprices(
 
 
 def load_dataset(refresh_days=1,
-                 dataset='common',
+                 dataset='general',
                  thresh=0.7,
                  simfin_api_key='free',
                  simfin_directory='simfin_data/',
@@ -54,7 +54,7 @@ def load_dataset(refresh_days=1,
     industry_df = sf.load_industries(refresh_days=1)
     industry_df.to_csv(data_directory/'industry.csv')
 
-    if dataset == 'common':
+    if dataset == 'general':
 
         # Load Data from Simfin
         income_df = sf.load_income(
@@ -66,7 +66,7 @@ def load_dataset(refresh_days=1,
         income_quarterly_df = income_quarterly_df.sort_index(
             level=['Ticker', 'Report Date'], ascending=[1, 1])
         income_df.groupby('Ticker').last().to_csv(
-            data_directory/'common_income.csv')
+            data_directory/'general_income.csv')
 
         balance_df = sf.load_balance(
             variant='ttm', market='us', refresh_days=refresh_days)
@@ -77,7 +77,7 @@ def load_dataset(refresh_days=1,
         balance_quarterly_df = balance_quarterly_df.sort_index(
             level=['Ticker', 'Report Date'], ascending=[1, 1])
         balance_df.groupby('Ticker').last().to_csv(
-            data_directory/'common_balance.csv')
+            data_directory/'general_balance.csv')
 
         cashflow_df = sf.load_cashflow(
             variant='ttm', market='us', refresh_days=refresh_days)
@@ -88,14 +88,14 @@ def load_dataset(refresh_days=1,
         cashflow_quarterlay_df = cashflow_quarterlay_df.sort_index(
             level=['Ticker', 'Report Date'], ascending=[1, 1])
         cashflow_df.groupby('Ticker').last().to_csv(
-            data_directory/'common_cashflow.csv')
+            data_directory/'general_cashflow.csv')
 
         derived_df = sf.load_derived(
             variant='ttm', market='us', refresh_days=refresh_days)
         derived_df = derived_df.sort_index(
             level=['Ticker', 'Report Date'], ascending=[1, 1])
         derived_df.groupby('Ticker').last().to_csv(
-            data_directory/'common_fundamental_derived.csv')
+            data_directory/'general_fundamental_derived.csv')
 
         cache_args = {'cache_name': 'financial_signals',
                       'cache_refresh': refresh_days}
@@ -129,7 +129,7 @@ def load_dataset(refresh_days=1,
                                                       ).join(growth_signal_df
                                                              ).join(derived_df[derived_df_columns])
 
-        fundamental_df['Dataset'] = 'common'
+        fundamental_df['Dataset'] = 'general'
 
     elif dataset == 'banks':
 
@@ -241,12 +241,12 @@ def load_dataset(refresh_days=1,
     df = sf.reindex(df_src=fundamental_df, df_target=shareprices_df, group_index=TICKER, method='ffill'
                     ).dropna(how='all').join(shareprices_df)
 
-    # Common
+    # General
     # Clean Up
     df = df.drop(['SimFinId', 'Currency', 'Fiscal Year', 'Report Date',
                   'Restated Date', 'Fiscal Period', 'Published Date'], axis=1)
 
-    if dataset == 'common':
+    if dataset == 'general':
         # Remove Share Prices Over Amazon Share Price
         df = df[df['Close'] <= df.loc['AMZN']['Close'].max()]
 

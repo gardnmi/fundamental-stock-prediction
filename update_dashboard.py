@@ -8,10 +8,10 @@ DATA_DIR = pathlib.Path('./data')
 MODELS_DIR = pathlib.Path('./models')
 
 
-model = pickle.load(open(MODELS_DIR/'common_model.pkl', 'rb'))
-y = pd.read_csv(DATA_DIR/'common_target.csv',
+model = pickle.load(open(MODELS_DIR/'general_model.pkl', 'rb'))
+y = pd.read_csv(DATA_DIR/'general_target.csv',
                 index_col=['Ticker']).drop(columns=['Date'])
-X = pd.read_csv(DATA_DIR/f'common_features.csv',
+X = pd.read_csv(DATA_DIR/f'general_features.csv',
                 index_col=['Ticker']).drop(columns=['Date'])
 
 # Dashboard Explainer is fussy about Column Names

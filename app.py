@@ -44,7 +44,7 @@ def get_data():
 
     # PREDICTIONS
     dfs = []
-    for sector in ['common', 'banks', 'insurance']:
+    for sector in ['general', 'banks', 'insurance']:
         df = pd.read_csv(
             DATA_DIR/f'{sector}_predictions.csv', index_col=['Ticker', 'Date'], parse_dates=['Date'])
         dfs.append(df)
@@ -76,7 +76,7 @@ def get_data():
     df = pd.read_csv(DATA_DIR/'stock_derived.csv')[cols]
     data_dict['Share Ratio'] = df
 
-    for schema in ['common', 'banks', 'insurance']:
+    for schema in ['general', 'banks', 'insurance']:
         # FEATURES
         df = pd.read_csv(
             DATA_DIR/f'{schema}_features.csv', index_col=['Ticker']).drop(columns=['Date'])
@@ -155,21 +155,30 @@ def get_data():
     data_dict['Balance'] = balance_dict
     data_dict['Cashflow'] = cashflow_dict
     data_dict['Fundamental Figures'] = pd.concat(
-        [ratio_figure_dict['Common'], ratio_figure_dict['Banks'], ratio_figure_dict['Insurance']])
+        [ratio_figure_dict['General'], ratio_figure_dict['Banks'], ratio_figure_dict['Insurance']])
 
     return data_dict
 
 
 def get_models():
 
-    common_model = pickle.load(open(MODELS_DIR/'common_model.pkl', 'rb'))
+    general_model = pickle.load(open(MODELS_DIR/'general_model.pkl', 'rb'))
     banks_model = pickle.load(open(MODELS_DIR/'banks_model.pkl', 'rb'))
     insurance_model = pickle.load(open(MODELS_DIR/'insurance_model.pkl', 'rb'))
 
+    commmon_explainer = shap.TreeExplainer(general_model)
+    banks_explainer = shap.TreeExplainer(banks_model)
+    insurance_explainer = shap.TreeExplainer(insurance_model)
+
     model_dict = {
-        'Common': common_model,
+        'General': general_model,
         'Banks': banks_model,
-        'Insurance': insurance_model}
+        'Insurance': insurance_model,
+        'General Explainer': commmon_explainer,
+        'Banks Explainer': banks_explainer,
+        'Insurance Explainer': insurance_explainer
+
+    }
 
     return model_dict
 
@@ -179,36 +188,36 @@ data = get_data()
 models = get_models()
 
 # Variables (REMOVE THIS WHEN GOING TO PRODUCTION)
-COMMON_TICKERS = data['Features']['Common'].index
+GENERAL_TICKERS = data['Features']['General'].index
 BANK_TICKERS = data['Features']['Banks'].index
 INSURANCE_TICKERS = data['Features']['Insurance'].index
 ALL_TICKERS = data['Tickers']
 
-COMMON_MODEL = models['Common']
+GENERAL_MODEL = models['General']
 BANK_MODEL = models['Banks']
 INSURANCE_MODEL = models['Insurance']
 
-COMMON_FEATURES = data['Features']['Common']
+GENERAL_FEATURES = data['Features']['General']
 BANK_FEATURES = data['Features']['Banks']
 INSURANCE_FEATURES = data['Features']['Insurance']
 
-COMMON_EXPLAINER = shap.TreeExplainer(COMMON_MODEL)
+GENERAL_EXPLAINER = shap.TreeExplainer(GENERAL_MODEL)
 BANK_EXPLAINER = shap.TreeExplainer(BANK_MODEL)
 INSURANCE_EXPLAINER = shap.TreeExplainer(INSURANCE_MODEL)
 
-COMMON_SIM = data['Similarity']['Common']
+GENERAL_SIM = data['Similarity']['General']
 BANKS_SIM = data['Similarity']['Banks']
 INSURANCE_SIM = data['Similarity']['Insurance']
 
-COMMON_INCOME = data['Income']['Common']
+GENERAL_INCOME = data['Income']['General']
 BANK_INCOME = data['Income']['Banks']
 INSURANCE_INCOME = data['Income']['Insurance']
 
-COMMON_BALANCE = data['Balance']['Common']
+GENERAL_BALANCE = data['Balance']['General']
 BANK_BALANCE = data['Balance']['Banks']
 INSURANCE_BALANCE = data['Balance']['Insurance']
 
-COMMON_CASHFLOW = data['Cashflow']['Common']
+GENERAL_CASHFLOW = data['Cashflow']['General']
 BANK_CASHFLOW = data['Cashflow']['Banks']
 INSURANCE_CASHFLOW = data['Cashflow']['Insurance']
 
@@ -243,6 +252,8 @@ with st.beta_container():
             that requires a lot of assumptions as inputs. This project aims to simplify and generalize  stock valuation
             using machine learning.  The predicted value, <code>predicted close</code>,
             uses the Trailing Twelve Month Fundamentals as features inputs</small></p>''', unsafe_allow_html=True)
+        st.markdown(
+            'Visit [Stock Valuation Explainer](https://price-valuation-explainer.herokuapp.com/) for more detail behind the models predictions.')
 
    #### HOT TO USE ####
     with st.sidebar.beta_expander("How to Use:", expanded=False):
@@ -267,8 +278,8 @@ with st.beta_container():
 
         options = np.concatenate([['All'], INDUSTRY.Sector.unique()])
         sector = st.selectbox('Sector', options=options, help='''A stock market sector is a group of stocks that have a lot in 
-                                                                 common with each other, usually because they are in similar industries. 
-                                                                 There are 11 different stock market sectors, according to the most commonly 
+                                                                 general with each other, usually because they are in similar industries. 
+                                                                 There are 11 different stock market sectors, according to the most generally 
                                                                  used classification system: the Global Industry Classification Standard 
                                                                  (GICS) 
                                                                  \n https://www.investopedia.com/ask/answers/05/industrysector.asp''')
@@ -298,7 +309,7 @@ with st.beta_container():
         min_value = int(SHARE_RATIO['Market-Cap'].min())
         max_value = int(SHARE_RATIO['Market-Cap'].max())
         help = '''Market capitalization refers to the total dollar market value of a company's outstanding 
-                            shares of stock. Commonly referred to as "market cap," it is calculated by multiplying the 
+                            shares of stock. Generally referred to as "market cap," it is calculated by multiplying the 
                             total number of a company's outstanding shares by the current market price of one share.
                             \n https://www.investopedia.com/terms/m/marketcapitalization.asp'''
 
@@ -371,7 +382,7 @@ with st.beta_container():
         bool = st.checkbox(
             "Dividend Stocks", value=False, help='''A dividend is the distribution of some of a company's earnings to 
                                                      a class of its shareholders, as determined by the company's board of 
-                                                     directors. Common shareholders of dividend-paying companies are typically 
+                                                     directors. General shareholders of dividend-paying companies are typically 
                                                      eligible as long as they own the stock before the ex-dividend date. 
                                                      Dividends may be paid out as cash or in the form of additional stock.
                                                      \n https://www.investopedia.com/terms/d/dividend.asp''')
@@ -513,30 +524,30 @@ with st.beta_container():
                 'Growth Estimates'].set_index('Growth Estimates')[[ticker]].T)
 
         # TODO TURN THIS INTO A FUNCTION THAT IS DYNAMIC
-        if ticker in COMMON_TICKERS:
+        if ticker in GENERAL_TICKERS:
             # FINANCIAL STATEMENTS
             if financial_statements:
                 st.subheader('Financial Statements')
                 st.markdown(
                     f'''<p><small>
-                    Publish Date: <code>{COMMON_INCOME.loc[ticker]['Publish Date']}</code>
+                    Publish Date: <code>{GENERAL_INCOME.loc[ticker]['Publish Date']}</code>
                     <br>
-                    Shares (Basic): <code>{COMMON_INCOME.loc[ticker]['Shares (Basic)']}</code>
+                    Shares (Basic): <code>{GENERAL_INCOME.loc[ticker]['Shares (Basic)']}</code>
                     </small></p>
                     ''', unsafe_allow_html=True)
 
                 income, balance, cashflow = st.beta_columns(3)
                 with income:
                     st.write('INCOME')
-                    st.table(COMMON_INCOME.loc[ticker].iloc[2:].rename(
+                    st.table(GENERAL_INCOME.loc[ticker].iloc[2:].rename(
                         'TTM').dropna())
                 with balance:
                     st.write('BALANCE')
-                    st.table(COMMON_BALANCE.loc[ticker].iloc[2:].rename(
+                    st.table(GENERAL_BALANCE.loc[ticker].iloc[2:].rename(
                         'TTM').dropna())
                 with cashflow:
                     st.write('CASHFLOW')
-                    st.table(COMMON_CASHFLOW.loc[ticker].iloc[2:].rename(
+                    st.table(GENERAL_CASHFLOW.loc[ticker].iloc[2:].rename(
                         'TTM').dropna())
 
             # PREDICTION EXPLANATION
@@ -547,8 +558,8 @@ with st.beta_container():
                             <code>predicted</code> stock value.
                             </small></p>''', unsafe_allow_html=True)
 
-                shap_values = COMMON_EXPLAINER(
-                    COMMON_FEATURES.loc[slice(ticker, ticker), :])[0]
+                shap_values = GENERAL_EXPLAINER(
+                    GENERAL_FEATURES.loc[slice(ticker, ticker), :])[0]
                 shap.waterfall_plot(shap_values, max_display=20)
                 st.pyplot()
 
@@ -569,7 +580,7 @@ with st.beta_container():
                         'Debt Ratio', 'Earnings Per Share, Basic', 'Earnings Per Share, Diluted', 'Sales Per Share',
                         'Equity Per Share', 'Free Cash Flow Per Share', 'Dividends Per Share', 'Pietroski F-Score']
 
-                df = COMMON_SIM.loc[ticker].sort_values(
+                df = GENERAL_SIM.loc[ticker].sort_values(
                     ascending=False).iloc[1:num_sim+1].to_frame()
                 df.index.name = 'Ticker'
                 df = df.join(CURRENT_PREDICTIONS)
@@ -617,8 +628,8 @@ with st.beta_container():
 if feature_importance:
     with st.beta_container():
         # https://github.com/slundberg/shap
-        # explainer = shap.TreeExplainer(COMMON_MODEL)
-        shap_values = COMMON_EXPLAINER(COMMON_FEATURES)
+        # explainer = shap.TreeExplainer(GENERAL_MODEL)
+        shap_values = GENERAL_EXPLAINER(GENERAL_FEATURES)
         st.subheader('Feature Importance')
         st.markdown(
             ''' <p> <small> The relative importance of each <code> fundamental feature </code >
