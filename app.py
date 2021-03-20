@@ -53,6 +53,10 @@ def get_data():
     _tickers = df.index.get_level_values(0)
     data_dict['Predictions'] = df
 
+    df = df[df.index.get_level_values(
+        1) == df.index.get_level_values(1).max()].reset_index(level=1, drop=True)
+    data_dict['Current Predictions'] = df
+
     # COMPANY & TICKERS
     df = pd.read_csv(DATA_DIR/'company.csv')
     df['Company Name'] = df['Company Name'].str.title()
@@ -183,7 +187,7 @@ def get_models():
     return model_dict
 
 
-# Loads Data
+# LOAD DATA
 data = get_data()
 models = get_models()
 
@@ -233,8 +237,57 @@ CURRENT_PREDICTIONS = PREDICTIONS[PREDICTIONS.index.get_level_values(
 #### HEADER ####
 with st.beta_container():
     st.markdown('''
-                   <h1>Stock Valuation</h1>
-                   <small><code>A poor man's bloomberg terminal</code></small>
+            <style>
+            .typewriter h4 {
+                width: auto;
+                display: inline-block;
+                overflow: hidden;
+                border-right: .15em solid white;
+                white-space: nowrap;
+                margin: 0 auto;
+                letter-spacing: .15em;
+                animation: typing 1.5s steps(40, end),
+                blink-caret .75s step-end infinite;
+                background: #273746;
+                border-radius: 3px;
+                color: white;
+            }
+
+            @keyframes typing {
+                from {
+                max-width: 0;
+
+                }
+
+                to {
+                max-width: 100%;
+
+                }
+            }
+
+            @keyframes blink-caret {
+
+                from,
+                to {
+                border-color: transparent;
+                box-sizing: border-box;
+                border-right: .8em solid;
+                }
+
+                50% {
+                border-color: orange;
+
+                }
+            }
+
+            </style>
+            <div>
+            <h1>Stock Valuation</h1>
+            </div>
+            <div class="typewriter">
+            <h4> &nbsp; A poor man's bloomberg terminal</h4>
+            </div>
+
                    ''', unsafe_allow_html=True)
 
 #### SIDEBAR ####
@@ -251,9 +304,10 @@ with st.beta_container():
             f'''<p><small>Traditional valuation models such as DCF are a time consuming process
             that requires a lot of assumptions as inputs. This project aims to simplify and generalize  stock valuation
             using machine learning.  The predicted value, <code>predicted close</code>,
-            uses the Trailing Twelve Month Fundamentals as features inputs</small></p>''', unsafe_allow_html=True)
-        st.markdown(
-            'Visit [Stock Valuation Explainer](https://price-valuation-explainer.herokuapp.com/) for more detail behind the models predictions.')
+            uses the Trailing Twelve Month Fundamentals as features inputs</small></p>
+            <p><small>Visit <a href="https://price-valuation-explainer.herokuapp.com/">Stock Valuation Explainer</a>
+            for more detail behind the models predictions.
+            </small></p>''', unsafe_allow_html=True)
 
    #### HOT TO USE ####
     with st.sidebar.beta_expander("How to Use:", expanded=False):
@@ -441,9 +495,11 @@ with st.beta_container():
 
     #### CONTACT ####
     with st.sidebar.beta_expander("Contact:", expanded=False):
-        st.markdown(''' - [Github](https://github.com/gardnmi/fundamental-stock-prediction)
-                        - [LinkedIn](https://www.linkedin.com/in/michael-gardner-38a29658/)
-             ''')
+        st.markdown(
+            '- [Github](https://github.com/gardnmi/fundamental-stock-prediction)')
+
+        st.markdown(
+            '- [LinkedIn](https://www.linkedin.com/in/michael-gardner-38a29658/)')
 
 
 #### DISCOVER ####
@@ -499,6 +555,14 @@ with st.beta_container():
     tickers = st.multiselect("Choose ticker(s)", ALL_TICKERS.index.to_list(), default=['ELY'],
                              format_func=ticker_dic.get, help='US Market Only')
     for ticker in tickers:
+
+        if ticker in data['Features']['General'].index:
+            key = 'General'
+        if ticker in data['Features']['Banks'].index:
+            key = 'Banks'
+        if ticker in data['Features']['Insurance'].index:
+            key = 'Insurance'
+
         # COMPANY AND STOCK PRICE
         yticker = yf.Ticker(f'{ticker}')
         st.subheader(f'**{ticker_dic[ticker]}**')
@@ -513,7 +577,7 @@ with st.beta_container():
 
         # CLOSE VS PREDICTED PRICE
         st.subheader('Close vs Predicted Close')
-        df = PREDICTIONS.loc[ticker]
+        df = data['Predictions'].loc[ticker]
         c = stock_line_chart(df)
         st.altair_chart(c, use_container_width=True)
 
@@ -523,91 +587,84 @@ with st.beta_container():
             st.table(si.get_analysts_info(ticker)[
                 'Growth Estimates'].set_index('Growth Estimates')[[ticker]].T)
 
-        # TODO TURN THIS INTO A FUNCTION THAT IS DYNAMIC
-        if ticker in GENERAL_TICKERS:
-            # FINANCIAL STATEMENTS
-            if financial_statements:
-                st.subheader('Financial Statements')
-                st.markdown(
-                    f'''<p><small>
-                    Publish Date: <code>{GENERAL_INCOME.loc[ticker]['Publish Date']}</code>
-                    <br>
-                    Shares (Basic): <code>{GENERAL_INCOME.loc[ticker]['Shares (Basic)']}</code>
-                    </small></p>
-                    ''', unsafe_allow_html=True)
+        # FINANCIAL STATEMENTS
+        if financial_statements:
+            st.subheader('Financial Statements')
+            st.markdown(
+                f'''<p><small>
+                Publish Date: <code>{data['Income'][key].loc[ticker]['Publish Date']}</code>
+                <br>
+                Shares (Basic): <code>{data['Income'][key].loc[ticker]['Shares (Basic)']}</code>
+                </small></p>
+                ''', unsafe_allow_html=True)
 
-                income, balance, cashflow = st.beta_columns(3)
-                with income:
-                    st.write('INCOME')
-                    st.table(GENERAL_INCOME.loc[ticker].iloc[2:].rename(
-                        'TTM').dropna())
-                with balance:
-                    st.write('BALANCE')
-                    st.table(GENERAL_BALANCE.loc[ticker].iloc[2:].rename(
-                        'TTM').dropna())
-                with cashflow:
-                    st.write('CASHFLOW')
-                    st.table(GENERAL_CASHFLOW.loc[ticker].iloc[2:].rename(
-                        'TTM').dropna())
+            income, balance, cashflow = st.beta_columns(3)
+            with income:
+                st.write('INCOME')
+                st.table(data['Income'][key].loc[ticker].iloc[2:].rename(
+                    'TTM').dropna())
+            with balance:
+                st.write('BALANCE')
+                st.table(data['Balance'][key].loc[ticker].iloc[2:].rename(
+                    'TTM').dropna())
+            with cashflow:
+                st.write('CASHFLOW')
+                st.table(data['Cashflow'][key].loc[ticker].iloc[2:].rename(
+                    'TTM').dropna())
 
-            # PREDICTION EXPLANATION
-            if prediction_explanation:
-                st.subheader('Prediction Explanation')
-                st.markdown('''<p><small>The waterfall plot is designed to visually display how
-                            the values of each feature moves the <code>average</code> stock value to the
-                            <code>predicted</code> stock value.
-                            </small></p>''', unsafe_allow_html=True)
+        # PREDICTION EXPLANATION
+        if prediction_explanation:
+            st.subheader('Prediction Explanation')
+            st.markdown('''<p><small>The waterfall plot is designed to visually display how
+                        the values of each feature moves the <code>average</code> stock value to the
+                        <code>predicted</code> stock value. Visit 
+                        <a href="https://price-valuation-explainer.herokuapp.com/">Stock Valuation Explainer</a> for more detail.
+                        </small></p>''', unsafe_allow_html=True)
 
-                shap_values = GENERAL_EXPLAINER(
-                    GENERAL_FEATURES.loc[slice(ticker, ticker), :])[0]
-                shap.waterfall_plot(shap_values, max_display=20)
-                st.pyplot()
+            shap_values = models[f'{key} Explainer'](
+                data['Features'][key].loc[slice(ticker, ticker), :])[0]
+            shap.waterfall_plot(shap_values, max_display=20)
+            st.pyplot()
 
-            # SIMILIAR STOCKS
-            if similiar_stocks:
-                st.subheader('Similiar Stocks')
-                st.markdown(
-                    '''<p><small>The 10 most similiar stocks based on the <code>cosine similarity
-                    </code> of there <code>per share</code> fundamentals</small></p>''',
-                    unsafe_allow_html=True)
+        # SIMILIAR STOCKS
+        if similiar_stocks:
+            st.subheader('Similiar Stocks')
+            st.markdown(
+                '''<p><small>The 10 most similiar stocks based on the <code>cosine similarity
+                </code> of there <code>per share</code> fundamentals</small></p>''',
+                unsafe_allow_html=True)
 
-                cols = ['Ticker', 'Close', 'Predicted Close', 'Company Name', 'Sector', 'Industry', 'Market-Cap', 'Enterprise Value',
-                        'Price to Earnings Ratio (ttm)', 'Price to Sales Ratio (ttm)', 'Price to Book Value',
-                        'Price to Free Cash Flow (ttm)', 'EV/EBITDA', 'EV/Sales', 'EV/FCF', 'Book to Market Value',
-                        'Operating Income/EV', 'EBITDA', 'Total Debt', 'Free Cash Flow', 'Gross Profit Margin',
-                        'Operating Margin', 'Net Profit Margin', 'Return on Equity',
-                        'Return on Assets', 'Free Cash Flow to Net Income', 'Current Ratio', 'Liabilities to Equity Ratio',
-                        'Debt Ratio', 'Earnings Per Share, Basic', 'Earnings Per Share, Diluted', 'Sales Per Share',
-                        'Equity Per Share', 'Free Cash Flow Per Share', 'Dividends Per Share', 'Pietroski F-Score']
+            cols = ['Ticker', 'Close', 'Predicted Close', 'Company Name', 'Sector', 'Industry', 'Market-Cap', 'Enterprise Value',
+                    'Price to Earnings Ratio (ttm)', 'Price to Sales Ratio (ttm)', 'Price to Book Value',
+                    'Price to Free Cash Flow (ttm)', 'EV/EBITDA', 'EV/Sales', 'EV/FCF', 'Book to Market Value',
+                    'Operating Income/EV', 'EBITDA', 'Total Debt', 'Free Cash Flow', 'Gross Profit Margin',
+                    'Operating Margin', 'Net Profit Margin', 'Return on Equity',
+                    'Return on Assets', 'Free Cash Flow to Net Income', 'Current Ratio', 'Liabilities to Equity Ratio',
+                    'Debt Ratio', 'Earnings Per Share, Basic', 'Earnings Per Share, Diluted', 'Sales Per Share',
+                    'Equity Per Share', 'Free Cash Flow Per Share', 'Dividends Per Share', 'Pietroski F-Score']
 
-                df = GENERAL_SIM.loc[ticker].sort_values(
-                    ascending=False).iloc[1:num_sim+1].to_frame()
-                df.index.name = 'Ticker'
-                df = df.join(CURRENT_PREDICTIONS)
-                df = df.join(COMPANY).reset_index()
-                df = df.merge(INDUSTRY, on='IndustryId', how='inner')
-                df = df.merge(SHARE_RATIO, on='Ticker', how='inner')
-                df = df.merge(FUNDAMENTAL_FIGURES, on='Ticker', how='inner')
-                df = df[cols]
-                df = df.set_index('Ticker')
-                manual_cols = ['Market-Cap', 'Enterprise Value',
-                               'EBITDA', 'Total Debt', 'Free Cash Flow']
+            df = data['Similarity'][key].loc[ticker].sort_values(
+                ascending=False).iloc[1:num_sim+1].to_frame()
+            df.index.name = 'Ticker'
+            df = df.join(data['Current Predictions'])
+            df = df.join(data['Company'].set_index('Ticker')).reset_index()
+            df = df.merge(data['Industry'], on='IndustryId', how='inner')
+            df = df.merge(data['Share Ratio'], on='Ticker', how='inner')
+            df = df.merge(data['Fundamental Figures'],
+                          on='Ticker', how='inner')
+            df = df[cols]
+            df = df.set_index('Ticker')
+            manual_cols = ['Market-Cap', 'Enterprise Value',
+                           'EBITDA', 'Total Debt', 'Free Cash Flow']
 
-                format_dict = get_default_format(df,
-                                                 int_format=human_format,
-                                                 manual_cols=manual_cols,
-                                                 manual_format=human_format)
-                for key, value in format_dict.items():
-                    df[key] = df[key].apply(
-                        value)
-                st.dataframe(df)
-
-        elif ticker in BANK_TICKERS:
-            pass
-        elif ticker in INSURANCE_TICKERS:
-            pass
-        else:
-            pass
+            format_dict = get_default_format(df,
+                                             int_format=human_format,
+                                             manual_cols=manual_cols,
+                                             manual_format=human_format)
+            for key, value in format_dict.items():
+                df[key] = df[key].apply(
+                    value)
+            st.dataframe(df)
 
         # NEWS FEED
         if news_feed:
