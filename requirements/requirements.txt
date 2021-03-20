@@ -9,3 +9,4 @@ shapash==1.2.0
 category-encoders==2.2.2
 yahoo-fin==0.8.7
 reticker==1.0.3
+explainerdashboard==0.3.3
