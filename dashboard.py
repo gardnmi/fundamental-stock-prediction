@@ -28,6 +28,8 @@ explainer = RegressionExplainer(model, X, y)
 db = ExplainerDashboard(
     explainer, title="Stock Valuation Explainer", shap_interaction=False, precision='float32', decision_trees=False)
 
+db.to_yaml("dashboard.yaml", explainerfile="explainer.joblib",
+           dump_explainer=True)
 
-# db = ExplainerDashboard.from_config("dashboard.yaml")
+db = ExplainerDashboard.from_config("dashboard.yaml")
 app = db.flask_server()
