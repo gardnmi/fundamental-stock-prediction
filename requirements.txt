@@ -1,2 +1,21 @@
 # https://stackoverflow.com/questions/16876816/how-to-customize-pips-requirements-txt-in-heroku-on-deployment
--r requirements/requirements.txt
+# -r requirements/requirements.txt
+
+
+seaborn==0.11.1
+pandas==1.1.3
+numpy==1.19.2
+klib==0.1.5
+python-dotenv==0.15.0
+shap==0.37.0
+simfin==0.8.1
+xgboost==1.3.3
+yfinance==0.1.55
+streamlit==0.79.0
+shapash==1.2.0
+category-encoders==2.2.2
+yahoo-fin==0.8.7
+explainerdashboard==0.3.3
+gunicorn
+xgboost==1.3.3
+reticker==1.0.3
