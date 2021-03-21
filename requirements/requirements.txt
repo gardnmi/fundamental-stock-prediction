@@ -12,3 +12,4 @@ reticker==1.0.3
 explainerdashboard==0.3.3
 gunicorn
 xgboost==1.3.3
+seaborn==0.11.1
