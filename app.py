@@ -22,7 +22,6 @@ extractor = reticker.TickerExtractor()
 
 
 # TODO
-# Refractor the ticker loop in Analysis for Commmon, Bank, Insurance
 # Add Linked Brushing Scatter Plot https://altair-viz.github.io/gallery/scatter_linked_brush.html
 
 # Page Settings
@@ -172,7 +171,7 @@ def get_models():
     banks_model = pickle.load(open(MODELS_DIR/'banks_model.pkl', 'rb'))
     insurance_model = pickle.load(open(MODELS_DIR/'insurance_model.pkl', 'rb'))
 
-    commmon_explainer = shap.TreeExplainer(general_model)
+    general_explainer = shap.TreeExplainer(general_model)
     banks_explainer = shap.TreeExplainer(banks_model)
     insurance_explainer = shap.TreeExplainer(insurance_model)
 
@@ -180,7 +179,7 @@ def get_models():
         'General': general_model,
         'Banks': banks_model,
         'Insurance': insurance_model,
-        'General Explainer': commmon_explainer,
+        'General Explainer': general_explainer,
         'Banks Explainer': banks_explainer,
         'Insurance Explainer': insurance_explainer
 
@@ -193,55 +192,12 @@ def get_models():
 data = get_data()
 models = get_models()
 
-# Variables (REMOVE THIS WHEN GOING TO PRODUCTION)
-GENERAL_TICKERS = data['Features']['General'].index
-BANK_TICKERS = data['Features']['Banks'].index
-INSURANCE_TICKERS = data['Features']['Insurance'].index
-ALL_TICKERS = data['Tickers']
-
-GENERAL_MODEL = models['General']
-BANK_MODEL = models['Banks']
-INSURANCE_MODEL = models['Insurance']
-
-GENERAL_FEATURES = data['Features']['General']
-BANK_FEATURES = data['Features']['Banks']
-INSURANCE_FEATURES = data['Features']['Insurance']
-
-GENERAL_EXPLAINER = shap.TreeExplainer(GENERAL_MODEL)
-BANK_EXPLAINER = shap.TreeExplainer(BANK_MODEL)
-INSURANCE_EXPLAINER = shap.TreeExplainer(INSURANCE_MODEL)
-
-GENERAL_SIM = data['Similarity']['General']
-BANKS_SIM = data['Similarity']['Banks']
-INSURANCE_SIM = data['Similarity']['Insurance']
-
-GENERAL_INCOME = data['Income']['General']
-BANK_INCOME = data['Income']['Banks']
-INSURANCE_INCOME = data['Income']['Insurance']
-
-GENERAL_BALANCE = data['Balance']['General']
-BANK_BALANCE = data['Balance']['Banks']
-INSURANCE_BALANCE = data['Balance']['Insurance']
-
-GENERAL_CASHFLOW = data['Cashflow']['General']
-BANK_CASHFLOW = data['Cashflow']['Banks']
-INSURANCE_CASHFLOW = data['Cashflow']['Insurance']
-
-COMPANY = data['Company'].set_index('Ticker')
-INDUSTRY = data['Industry']
-SHARE_RATIO = data['Share Ratio']
-FUNDAMENTAL_FIGURES = data['Fundamental Figures']
-PREDICTIONS = data['Predictions']
-CURRENT_PREDICTIONS = PREDICTIONS[PREDICTIONS.index.get_level_values(
-    1) == PREDICTIONS.index.get_level_values(1).max()].reset_index(level=1, drop=True)
-
-
 #### HEADER ####
 with st.beta_container():
 
     st.markdown('''
             <style>
-            .typewriter h4 {
+              .typewriter h4 {
                 width: auto;
                 display: inline-block;
                 overflow: hidden;
@@ -251,45 +207,53 @@ with st.beta_container():
                 padding: 0.5em 0px 0.5em;
                 letter-spacing: .15em;
                 animation: typing 1.5s steps(40, end),
-                blink-caret .75s step-end infinite;
+                  blink-caret .75s step-end infinite;
                 background: #273746;
                 border-radius: 3px;
                 color: white;
-            }
+              }
 
-            @keyframes typing {
+              @keyframes typing {
                 from {
-                max-width: 0;
+                  max-width: 0;
+
 
                 }
 
                 to {
-                max-width: 100%;
+                  max-width: 100%;
 
                 }
-            }
+              }
 
-            @keyframes blink-caret {
+              @keyframes blink-caret {
 
                 from,
                 to {
-                border-color: transparent;
-                box-sizing: border-box;
-                border-right: .8em solid;
+                  border-color: transparent;
+                  box-sizing: border-box;
+                  border-right: .8em solid;
                 }
 
-                50% {
-                border-color: orange;
+                0%,
+                49% {
+                  border-color: orange;
 
                 }
-            }
+
+                50%,
+                100% {
+                  border-color: #273746;
+
+                }
+              }
 
             </style>
             <div>
-            <h1>Stock Valuation w/ Machine Learnimg</h1>
+              <h1>Stock Valuation w/ Machine Learnimg</h1>
             </div>
             <div class="typewriter">
-            <h4> &nbsp; A poor man's bloomberg terminal</h4>
+              <h4> &nbsp; A poor man's bloomberg terminal</h4>
             </div>
 
                    ''', unsafe_allow_html=True)
@@ -308,7 +272,7 @@ with st.beta_container():
         st.markdown(
             f'''<p><small>Traditional valuation models such as DCF are a time consuming process
             that requires a lot of assumptions as inputs. This project aims to simplify and generalize  stock valuation
-            using machine learning.  The predicted value, <code>predicted close</code>,
+            using machine learning.  The predicted value, <code>Machine Learning Valuation</code>,
             uses the Trailing Twelve Month Fundamentals as features inputs</small></p>
             <p><small>Visit <a href="https://price-valuation-explainer.herokuapp.com/">Stock Valuation Explainer</a>
             for more detail behind the models predictions.
@@ -318,13 +282,15 @@ with st.beta_container():
     with st.sidebar.beta_expander("How to Use:", expanded=False):
         st.markdown(
             f'''<p><small>Find potential investments in in the Scatter Plot located in the
-            <code>Discover</code> section and input the ticker/company name in the drop down box in the
+            <code>Machine Learning Valuation</code> section and input the ticker/company name in the drop down box in the
             <code>Analysis</code> section to further explore. </small></p>
             <p><small>Use the preset filters to filter down the scatter plot
             or customize the filter using the filters below.</small></p>''', unsafe_allow_html=True)
 
     #### FILTERS ####
     with st.sidebar.beta_expander("Filters:", expanded=False):
+        st.markdown(
+            '''<p><small> Filters for the <code>Machine Learning Valuation</code> scatter plot.</small></p>''', unsafe_allow_html=True)
         ticker_input = st.text_area(
             'Input Ticker(s)', help='''Tickers can be entered in any format and will 
                                        be parsed correctly 
@@ -335,7 +301,7 @@ with st.beta_container():
 
         custom_tickers = extractor.extract(ticker_input)
 
-        options = np.concatenate([['All'], INDUSTRY.Sector.unique()])
+        options = np.concatenate([['All'], data['Industry'].Sector.unique()])
         sector = st.selectbox('Sector', options=options, help='''A stock market sector is a group of stocks that have a lot in 
                                                                  general with each other, usually because they are in similar industries. 
                                                                  There are 11 different stock market sectors, according to the most generally 
@@ -343,15 +309,15 @@ with st.beta_container():
                                                                  (GICS) 
                                                                  \n https://www.investopedia.com/ask/answers/05/industrysector.asp''')
 
-        options = np.concatenate([['All'], INDUSTRY.Industry.unique()])
+        options = np.concatenate([['All'], data['Industry'].Industry.unique()])
         industry = st.selectbox('Industry', options=options, help='''Industry refers to a specific group of companies that operate in a similar business sphere. 
                                                                      Essentially, industries are created by breaking down sectors into more defined groupings. 
                                                                      Therefore, these companies are divided into more specific groups than sectors. Each of the dozen 
                                                                      or so sectors will have a varying number of industries, but it can be in the hundreds.
                                                                      \n https://www.investopedia.com/ask/answers/05/industrysector.asp''')
 
-        min_value = CURRENT_PREDICTIONS['Close'].min()
-        max_value = CURRENT_PREDICTIONS['Close'].max()
+        min_value = data['Current Predictions']['Close'].min()
+        max_value = data['Current Predictions']['Close'].max()
         min_stock_price = st.number_input('Min Stock Price',
                                           min_value=min_value,
                                           max_value=max_value,
@@ -365,8 +331,8 @@ with st.beta_container():
                                           value=max_value
                                           )
 
-        min_value = int(SHARE_RATIO['Market-Cap'].min())
-        max_value = int(SHARE_RATIO['Market-Cap'].max())
+        min_value = int(data['Share Ratio']['Market-Cap'].min())
+        max_value = int(data['Share Ratio']['Market-Cap'].max())
         help = '''Market capitalization refers to the total dollar market value of a company's outstanding 
                             shares of stock. Generally referred to as "market cap," it is calculated by multiplying the 
                             total number of a company's outstanding shares by the current market price of one share.
@@ -389,8 +355,8 @@ with st.beta_container():
                                          help=help
                                          )
 
-        min_value = int(FUNDAMENTAL_FIGURES['Free Cash Flow'].min())
-        max_value = int(FUNDAMENTAL_FIGURES['Free Cash Flow'].max())
+        min_value = int(data['Fundamental Figures']['Free Cash Flow'].min())
+        max_value = int(data['Fundamental Figures']['Free Cash Flow'].max())
         help = '''Free cash flow (FCF) represents the cash a company generates after accounting for 
                         cash outflows to support operations and maintain its capital assets. Unlike earnings 
                         or net income, free cash flow is a measure of profitability that excludes the non-cash 
@@ -414,8 +380,8 @@ with st.beta_container():
                                   help=help
                                   )
 
-        min_value = int(FUNDAMENTAL_FIGURES['Total Debt'].min())
-        max_value = int(FUNDAMENTAL_FIGURES['Total Debt'].max())
+        min_value = int(data['Fundamental Figures']['Total Debt'].min())
+        max_value = int(data['Fundamental Figures']['Total Debt'].max())
         help = '''Total debt is calculated by adding up a company's liabilities, or debts, which are categorized 
                   as short and long-term debt. Financial lenders or business leaders may look at a company's balance 
                   sheet to factor in the debt ratio to make informed decisions about future loan options. 
@@ -446,13 +412,13 @@ with st.beta_container():
                                                      Dividends may be paid out as cash or in the form of additional stock.
                                                      \n https://www.investopedia.com/terms/d/dividend.asp''')
         if bool:
-            dividend_tickers = FUNDAMENTAL_FIGURES[FUNDAMENTAL_FIGURES['Dividends Per Share'].notnull(
+            dividend_tickers = data['Fundamental Figures'][data['Fundamental Figures']['Dividends Per Share'].notnull(
             )]['Ticker']
         else:
             dividend_tickers = False
 
         options = np.concatenate(
-            [['All'], FUNDAMENTAL_FIGURES['Pietroski F-Score'].dropna().sort_values().unique()])
+            [['All'], data['Fundamental Figures']['Pietroski F-Score'].dropna().sort_values().unique()])
         f_score = st.selectbox('Pietroski F-Score', options=options, help='''Piotroski F-score is a number between 0 and 9 
                                                                             which is used to assess strength of company's financial position. 
                                                                             The score is used by financial investors in order to find the best 
@@ -506,10 +472,15 @@ with st.beta_container():
         st.markdown(
             '- [LinkedIn](https://www.linkedin.com/in/michael-gardner-38a29658/)')
 
+    #### CHANGE LOG ####
+    with st.sidebar.beta_expander("Change Log:", expanded=False):
+        st.markdown(
+            '- Initial Commit')
 
-#### DISCOVER ####
+
+#### Machine Learning Valuation ####
 with st.beta_container():
-    st.header('** Discover: **')
+    st.header('** Machine Learning Valuation: **')
 
     preset_functions = {
         'All': False,
@@ -521,7 +492,7 @@ with st.beta_container():
         'Day Most Active': si.get_day_most_active,
         'Undervalued Large Cap': si.get_undervalued_large_caps
     }
-    st.markdown('''<p><small>The Predicted Stock Price vs Actual. Hover over the circle in the chart
+    st.markdown('''<p><small> Hover over the circle in the chart
                    to see figures and ratios for each company. Reduce the number of tickers using 
                    the preset dropdown below or the filters located in the sidebar.
                 </small></p>''', unsafe_allow_html=True)
@@ -556,8 +527,8 @@ with st.beta_container():
     st.header('** Analysis: **')
 
     # TICKER DROP DOWN
-    ticker_dic = ALL_TICKERS['Company Name (Ticker)'].to_dict()
-    tickers = st.multiselect("Choose ticker(s)", ALL_TICKERS.index.to_list(), default=['ELY'],
+    ticker_dic = data['Tickers']['Company Name (Ticker)'].to_dict()
+    tickers = st.multiselect("Choose ticker(s)", data['Tickers'].index.to_list(), default=['ELY'],
                              format_func=ticker_dic.get, help='US Market Only')
     for ticker in tickers:
 
@@ -581,7 +552,8 @@ with st.beta_container():
                 st.markdown(f"> {yticker.info['longBusinessSummary']}")
 
         # CLOSE VS PREDICTED PRICE
-        st.subheader('Close vs Predicted Close')
+        st.subheader(
+            '30 Day Moving Avg vs Machine Learning Valuation Over Time')
         df = data['Predictions'].loc[ticker]
         c = stock_line_chart(df)
         st.altair_chart(c, use_container_width=True)
@@ -689,8 +661,8 @@ with st.beta_container():
 if feature_importance:
     with st.beta_container():
         # https://github.com/slundberg/shap
-        # explainer = shap.TreeExplainer(GENERAL_MODEL)
-        shap_values = GENERAL_EXPLAINER(GENERAL_FEATURES)
+        shap_values = shap.TreeExplainer(
+            models['General'])(data['Features']['General'])
         st.subheader('Feature Importance')
         st.markdown(
             ''' <p> <small> The relative importance of each <code> fundamental feature </code >

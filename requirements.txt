@@ -1,2 +1,2 @@
 # https://stackoverflow.com/questions/16876816/how-to-customize-pips-requirements-txt-in-heroku-on-deployment
--r requirements/dashboard.txt
+-r requirements/requirements.txt

@@ -85,7 +85,8 @@ def scatter_filter(data, preset_tickers, filters):
 def stock_line_chart(df):
 
     source = df.copy()
-    source = source.rename(columns={'Close': '30 DMA Close'})
+    source = source.rename(
+        columns={'Close': '30 DMA Close', 'Predicted Close': 'ML Valuation'})
     source = source.round(0)
     source = source.reset_index().melt('Date', var_name='category', value_name='Price')
     # Create a selection that chooses the nearest point & selects based on x-value
@@ -141,19 +142,19 @@ def scatter_variance_chart(df):
 
     source = df.copy()
     # Calculated Columns
-    source['Predicted vs Close %'] = (
+    source['ML Valuation vs 30 DMA Close %'] = (
         source['Close'] - source['Predicted Close']) / source['Predicted Close']
 
     bins = np.array([-1, -0.15, 0.15, 999999999999])
 
     labels = ['< -15%', 'within 15%', '> 15%']
 
-    source['Predicted vs Close % '] = pd.cut(
-        source['Predicted vs Close %'], bins=bins, labels=labels, include_lowest=True)
+    source['ML Valuation vs 30 DMA Close % '] = pd.cut(
+        source['ML Valuation vs 30 DMA Close %'], bins=bins, labels=labels, include_lowest=True)
 
     # Formatting
     # Streamlit cannot handle categorical dtype
-    source['Predicted vs Close % '] = source['Predicted vs Close % '].astype(
+    source['ML Valuation vs 30 DMA Close % '] = source['ML Valuation vs 30 DMA Close % '].astype(
         str)
 
     source[['Close', 'Predicted Close']] = source[[
@@ -176,21 +177,22 @@ def scatter_variance_chart(df):
         source[f'{col} ($)'] = source[col].map(human_format)
 
     source = source.reset_index()
-    source = source.rename(columns={'Close': '30 DMA Close'})
+    source = source.rename(
+        columns={'Close': '30 Day Moving Average', 'Predicted Close': 'Machine Learning Valuation'})
 
     c = alt.Chart(source).mark_point(size=150).encode(
-        x='30 DMA Close',
-        y='Predicted Close',
-        color=alt.Color('Predicted vs Close % ',
+        x='30 Day Moving Average',
+        y='Machine Learning Valuation',
+        color=alt.Color('ML Valuation vs 30 DMA Close % ',
                         legend=alt.Legend(orient='bottom')),
         tooltip=[
             'Company Name',
             'Ticker',
             'Sector',
             'Industry',
-            '30 DMA Close',
-            'Predicted Close',
-            alt.Tooltip('Predicted vs Close %:Q', format='.0%'),
+            '30 Day Moving Average',
+            'Machine Learning Valuation',
+            alt.Tooltip('ML Valuation vs 30 DMA Close %:Q', format='.0%'),
             'Market-Cap ($)',
             'Enterprise Value ($)',
             'Free Cash Flow ($)',
