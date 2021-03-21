@@ -12,13 +12,13 @@ import pathlib
 from charts import stock_line_chart, scatter_variance_chart, scatter_filter
 from datetime import datetime
 from time import mktime
-import reticker
+# import reticker
 from quotes import quotes
 
 
 DATA_DIR = pathlib.Path('./data')
 MODELS_DIR = pathlib.Path('./models')
-extractor = reticker.TickerExtractor()
+# extractor = reticker.TickerExtractor()
 
 
 # TODO
@@ -291,15 +291,16 @@ with st.beta_container():
     with st.sidebar.beta_expander("Filters:", expanded=False):
         st.markdown(
             '''<p><small> Filters for the <code>Machine Learning Valuation</code> scatter plot.</small></p>''', unsafe_allow_html=True)
-        ticker_input = st.text_area(
-            'Input Ticker(s)', help='''Tickers can be entered in any format and will 
-                                       be parsed correctly 
-                                       \n i.e. "Has GLD/IAU bottomed yet?" 
-                                       = ['GLD', 'IAU'] or "GLD $IAU" = ['GLD', 'IAU'].  
-                                       \n Extraction done by https://pypi.org/project/reticker/
-                                      ''')
+        # ticker_input = st.text_area(
+        #     'Input Ticker(s)', help='''Tickers can be entered in any format and will
+        #                                be parsed correctly
+        #                                \n i.e. "Has GLD/IAU bottomed yet?"
+        #                                = ['GLD', 'IAU'] or "GLD $IAU" = ['GLD', 'IAU'].
+        #                                \n Extraction done by https://pypi.org/project/reticker/
+        #                               ''')
 
-        custom_tickers = extractor.extract(ticker_input)
+        # custom_tickers = extractor.extract(ticker_input)
+        custom_tickers = False
 
         options = np.concatenate([['All'], data['Industry'].Sector.unique()])
         sector = st.selectbox('Sector', options=options, help='''A stock market sector is a group of stocks that have a lot in 
