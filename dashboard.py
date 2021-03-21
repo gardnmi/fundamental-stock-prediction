@@ -7,11 +7,11 @@ from explainerdashboard import RegressionExplainer, ExplainerDashboard
 import pathlib
 import datetime
 
+
 DATA_DIR = pathlib.Path('./data')
 MODELS_DIR = pathlib.Path('./models')
 
-
-mtime = (MODELS_DIR/'general_model.pkl').stat().st_mtime
+mtime = pathlib.Path('explainer.joblib').stat().st_mtime
 mtime = pd.to_datetime(datetime.datetime.fromtimestamp(mtime))
 days_since_update = (pd.to_datetime('today') - mtime).days
 
