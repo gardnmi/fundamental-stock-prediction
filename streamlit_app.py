@@ -300,7 +300,7 @@ with st.beta_container():
         #                               ''')
 
         # custom_tickers = extractor.extract(ticker_input)
-        custom_tickers = False
+        custom_tickers = None
 
         options = np.concatenate([['All'], data['Industry'].Sector.unique()])
         sector = st.selectbox('Sector', options=options, help='''A stock market sector is a group of stocks that have a lot in 
