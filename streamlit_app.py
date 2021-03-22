@@ -591,6 +591,43 @@ with st.beta_container():
                 st.table(data['Cashflow'][key].loc[ticker].iloc[2:].rename(
                     'TTM').dropna())
 
+            figures, ratios = st.beta_columns(2)
+            with figures:
+                st.write('FIGURES')
+
+                figure_df = data['Fundamental Figures'].set_index(
+                    'Ticker').loc[ticker].to_frame().T
+
+                # Formatting
+                format_dict = get_default_format(figure_df,
+                                                 int_format=human_format,
+                                                 manual_cols=[
+                                                     'EBITDA', 'Total Debt', 'Free Cash Flow'],
+                                                 manual_format=human_format)
+
+                for col, value in format_dict.items():
+                    figure_df[col] = figure_df[col].apply(
+                        value)
+
+                st.table(figure_df.T)
+            with ratios:
+                st.write('RATIOS')
+                ratio_df = data['Share Ratio'].set_index(
+                    'Ticker').loc[ticker].to_frame().T
+
+                # Formatting
+                format_dict = get_default_format(ratio_df,
+                                                 int_format=human_format,
+                                                 manual_cols=[
+                                                     'Market-Cap', 'Enterprise Value'],
+                                                 manual_format=human_format)
+
+                for col, value in format_dict.items():
+                    ratio_df[col] = ratio_df[col].apply(
+                        value)
+
+                st.table(ratio_df.T)
+
         # PREDICTION EXPLANATION
         if prediction_explanation:
             st.subheader('Prediction Explanation')
