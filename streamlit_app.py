@@ -32,6 +32,8 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+st.set_option('deprecation.showPyplotGlobalUse', False)
+
 
 @st.cache
 def get_data():
