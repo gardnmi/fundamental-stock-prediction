@@ -679,6 +679,9 @@ with st.beta_container():
             for key, value in format_dict.items():
                 df[key] = df[key].apply(
                     value)
+
+            df = df.rename(columns={'Close': '30 DMA',
+                                    'Predicted Close': 'ML Valuation'})
             st.dataframe(df)
 
         # NEWS FEED
