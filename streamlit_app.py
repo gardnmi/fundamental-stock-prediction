@@ -84,9 +84,9 @@ def get_data():
     df = pd.read_csv(DATA_DIR/'stock_derived.csv')[cols]
     data_dict['Share Ratio'] = df
 
-    # ANALYST GROWTH ESTIMATES
-    df = pd.read_csv(DATA_DIR/'analyst_growth_estimates.csv')
-    data_dict['Growth Estimates'] = df
+    # # ANALYST GROWTH ESTIMATES
+    # df = pd.read_csv(DATA_DIR/'analyst_growth_estimates.csv')
+    # data_dict['Growth Estimates'] = df
 
     for schema in ['general', 'banks', 'insurance']:
         # FEATURES
@@ -565,37 +565,37 @@ with st.beta_container():
         c = stock_line_chart(df)
         st.altair_chart(c, use_container_width=True)
 
-        # GROWTH CALCULATION
-        st.subheader(
-            'Machine Learning Valuation Over Time with Growth Estimate')
-        st.markdown('Explanation Goes Here')
-        # TODO
-        # SLIDER TO MOVE GROWTH % UP OR DOWN
-        # MULTIPLY GROWTH % BY THE FEATURES IN LIST
-        # RUN THE FEATURES IN ML MODEL TO GET
-        growth_df = data['Growth Estimates']
-###############################################################################
-        # put in the right dataframes
-        growth_df = growth_df.reindex(sales_growth_df.index)
-        growth_df = growth_df.join(company_df).merge(
-            industry_df,  left_on='IndustryId', right_index=True)  # .columns
-        growth_df = growth_df[['Next 5 Years (per annum)', 'Industry']]
-        growth_df['Growth'] = growth_df.groupby(
-            'Industry').transform(lambda x: x.fillna(x.mean()))
-        (growth_df['Growth']+1)**5
+#         # GROWTH CALCULATION
+#         st.subheader(
+#             'Machine Learning Valuation Over Time with Growth Estimate')
+#         st.markdown('Explanation Goes Here')
+#         # TODO
+#         # SLIDER TO MOVE GROWTH % UP OR DOWN
+#         # MULTIPLY GROWTH % BY THE FEATURES IN LIST
+#         # RUN THE FEATURES IN ML MODEL TO GET
+#         growth_df = data['Growth Estimates']
+# ###############################################################################
+#         # put in the right dataframes
+#         growth_df = growth_df.reindex(sales_growth_df.index)
+#         growth_df = growth_df.join(company_df).merge(
+#             industry_df,  left_on='IndustryId', right_index=True)  # .columns
+#         growth_df = growth_df[['Next 5 Years (per annum)', 'Industry']]
+#         growth_df['Growth'] = growth_df.groupby(
+#             'Industry').transform(lambda x: x.fillna(x.mean()))
+#         (growth_df['Growth']+1)**5
 
-        # COLUMNS TO UPDATE IN FEATURE (IF NEGATIVE LEAVE THE SAME FOR NOW)
-        ['Cash, Cash Equivalents & Short Term Investments',
-         'Net Cash from Operating Activities',
-         'Net Income',
-         'Income (Loss) from Continuing Operations',
-         'Earnings Per Share, Basic',
-         'Net Cash from Investing Activities',
-         'Earnings Per Share, Diluted',
-         'Pretax Income (Loss), Adj.',
-         'Gross Profit',
-         'Net Income (Common)']
-################################################################################
+#         # COLUMNS TO UPDATE IN FEATURE (IF NEGATIVE LEAVE THE SAME FOR NOW)
+#         ['Cash, Cash Equivalents & Short Term Investments',
+#          'Net Cash from Operating Activities',
+#          'Net Income',
+#          'Income (Loss) from Continuing Operations',
+#          'Earnings Per Share, Basic',
+#          'Net Cash from Investing Activities',
+#          'Earnings Per Share, Diluted',
+#          'Pretax Income (Loss), Adj.',
+#          'Gross Profit',
+#          'Net Income (Common)']
+# ################################################################################
 
         # ANALYST ESTIMATES
         if analyst_growth:
