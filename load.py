@@ -71,10 +71,10 @@ def load_dataset(refresh_days=1,
             except:
                 pass
 
-    growth_df = pd.concat(dfs)
-    growth_df = growth_df.applymap(lambda x: float(
-        x.strip('%').replace(",", ""))/100 if pd.notnull(x) else x)
-    growth_df.to_csv('analyst_growth_estimates.csv')
+        growth_df = pd.concat(dfs)
+        growth_df = growth_df.applymap(lambda x: float(
+            x.strip('%').replace(",", ""))/100 if pd.notnull(x) else x)
+        growth_df.to_csv('analyst_growth_estimates.csv')
 
     if dataset == 'general':
 
