@@ -56,6 +56,7 @@ def get_data():
     _tickers = df.index.get_level_values(0)
     data_dict['Predictions'] = df
 
+    # CURRENT PREDICTIONS
     df = df[df.index.get_level_values(
         1) == df.index.get_level_values(1).max()].reset_index(level=1, drop=True)
     data_dict['Current Predictions'] = df

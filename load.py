@@ -4,6 +4,8 @@ import simfin as sf
 from simfin.names import *
 import pathlib
 from category_encoders import OrdinalEncoder
+import datetime
+import yahoo_fin.stock_info as si
 
 DATA_DIR = pathlib.Path('./data')
 
@@ -53,6 +55,24 @@ def load_dataset(refresh_days=1,
 
     industry_df = sf.load_industries(refresh_days=1)
     industry_df.to_csv(data_directory/'industry.csv')
+
+    # Analyst Growth Update
+    mtime = (DATA_DIR/'analyst_growth_target.csv').stat().st_mtime
+    mtime = pd.to_datetime(datetime.datetime.fromtimestamp(mtime))
+    days_since_update = (pd.to_datetime('today') - mtime).days
+
+    dfs = []
+    if days_since_update > 30:
+        for ticker in compnay_df.index:
+            try:
+                df = si.get_analysts_info(ticker)['Growth Estimates'].set_index(
+                    'Growth Estimates')[[ticker]].T
+                dfs.append(df)
+            except:
+                pass
+
+    growth_df = pd.concat(dfs)
+    growth_df.to_csv('analyst_growth_target.csv')
 
     if dataset == 'general':
 
