@@ -57,12 +57,15 @@ def load_dataset(refresh_days=1,
     industry_df.to_csv(data_directory/'industry.csv')
 
     # Analyst Growth Update
-    mtime = (DATA_DIR/'analyst_growth_target.csv').stat().st_mtime
-    mtime = pd.to_datetime(datetime.datetime.fromtimestamp(mtime))
-    days_since_update = (pd.to_datetime('today') - mtime).days
+    try:
+        mtime = (DATA_DIR/'analyst_growth_target.csv').stat().st_mtime
+        mtime = pd.to_datetime(datetime.datetime.fromtimestamp(mtime))
+        days_since_update = (pd.to_datetime('today') - mtime).days
+    except:
+        days_since_update = False
 
     dfs = []
-    if days_since_update > 30:
+    if days_since_update > 30 or not days_since_update:
         for ticker in company_df.index:
             try:
                 df = si.get_analysts_info(ticker)['Growth Estimates'].set_index(
