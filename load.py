@@ -63,7 +63,7 @@ def load_dataset(refresh_days=1,
 
     dfs = []
     if days_since_update > 30:
-        for ticker in compnay_df.index:
+        for ticker in company_df.index:
             try:
                 df = si.get_analysts_info(ticker)['Growth Estimates'].set_index(
                     'Growth Estimates')[[ticker]].T
@@ -72,6 +72,8 @@ def load_dataset(refresh_days=1,
                 pass
 
     growth_df = pd.concat(dfs)
+    growth_df = growth_df.applymap(lambda x: float(
+        x.strip('%').replace(",", ""))/100 if pd.notnull(x) else x)
     growth_df.to_csv('analyst_growth_estimates.csv')
 
     if dataset == 'general':
