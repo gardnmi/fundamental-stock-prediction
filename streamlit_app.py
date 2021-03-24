@@ -84,9 +84,19 @@ def get_data():
     df = pd.read_csv(DATA_DIR/'stock_derived.csv')[cols]
     data_dict['Share Ratio'] = df
 
-    # # ANALYST GROWTH ESTIMATES
-    # df = pd.read_csv(DATA_DIR/'analyst_growth_estimates.csv')
-    # data_dict['Growth Estimates'] = df
+    # ANALYST GROWTH ESTIMATES
+    df = pd.read_csv(DATA_DIR/'analyst_growth_estimates.csv')
+    df = df.rename(columns={'Unnamed: 0': 'Ticker'}).set_index('Ticker')
+    df = df.reindex(data_dict['Current Predictions'].index)
+    df = df.merge(data_dict['Company'], left_index=True, right_on='Ticker')
+    df = df.merge(data_dict['Industry'],  on='IndustryId')
+    df = df[['Next 5 Years (per annum)', 'Industry', 'Ticker']]
+    df['Next 5 Years (per annum)'] = df['Next 5 Years (per annum)'].map(lambda x: float(
+        x.strip('%').replace(",", ""))/100 if pd.notnull(x) else x)
+    df['Growth'] = df.groupby('Industry').transform(
+        lambda x: x.fillna(x.mean()))
+    df = df[['Ticker', 'Growth']].set_index('Ticker')
+    data_dict['Growth Estimates'] = df
 
     for schema in ['general', 'banks', 'insurance']:
         # FEATURES
@@ -309,17 +319,17 @@ with st.beta_container():
         custom_tickers = extractor.extract(ticker_input)
 
         options = np.concatenate([['All'], data['Industry'].Sector.unique()])
-        sector = st.selectbox('Sector', options=options, help='''A stock market sector is a group of stocks that have a lot in 
-                                                                 general with each other, usually because they are in similar industries. 
-                                                                 There are 11 different stock market sectors, according to the most generally 
-                                                                 used classification system: the Global Industry Classification Standard 
-                                                                 (GICS) 
+        sector = st.selectbox('Sector', options=options, help='''A stock market sector is a group of stocks that have a lot in
+                                                                 general with each other, usually because they are in similar industries.
+                                                                 There are 11 different stock market sectors, according to the most generally
+                                                                 used classification system: the Global Industry Classification Standard
+                                                                 (GICS)
                                                                  \n https://www.investopedia.com/ask/answers/05/industrysector.asp''')
 
         options = np.concatenate([['All'], data['Industry'].Industry.unique()])
-        industry = st.selectbox('Industry', options=options, help='''Industry refers to a specific group of companies that operate in a similar business sphere. 
-                                                                     Essentially, industries are created by breaking down sectors into more defined groupings. 
-                                                                     Therefore, these companies are divided into more specific groups than sectors. Each of the dozen 
+        industry = st.selectbox('Industry', options=options, help='''Industry refers to a specific group of companies that operate in a similar business sphere.
+                                                                     Essentially, industries are created by breaking down sectors into more defined groupings.
+                                                                     Therefore, these companies are divided into more specific groups than sectors. Each of the dozen
                                                                      or so sectors will have a varying number of industries, but it can be in the hundreds.
                                                                      \n https://www.investopedia.com/ask/answers/05/industrysector.asp''')
 
@@ -340,8 +350,8 @@ with st.beta_container():
 
         min_value = int(data['Share Ratio']['Market-Cap'].min())
         max_value = int(data['Share Ratio']['Market-Cap'].max())
-        help = '''Market capitalization refers to the total dollar market value of a company's outstanding 
-                            shares of stock. Generally referred to as "market cap," it is calculated by multiplying the 
+        help = '''Market capitalization refers to the total dollar market value of a company's outstanding
+                            shares of stock. Generally referred to as "market cap," it is calculated by multiplying the
                             total number of a company's outstanding shares by the current market price of one share.
                             \n https://www.investopedia.com/terms/m/marketcapitalization.asp'''
 
@@ -364,10 +374,10 @@ with st.beta_container():
 
         min_value = int(data['Fundamental Figures']['Free Cash Flow'].min())
         max_value = int(data['Fundamental Figures']['Free Cash Flow'].max())
-        help = '''Free cash flow (FCF) represents the cash a company generates after accounting for 
-                        cash outflows to support operations and maintain its capital assets. Unlike earnings 
-                        or net income, free cash flow is a measure of profitability that excludes the non-cash 
-                        expenses of the income statement and includes spending on equipment and assets as well 
+        help = '''Free cash flow (FCF) represents the cash a company generates after accounting for
+                        cash outflows to support operations and maintain its capital assets. Unlike earnings
+                        or net income, free cash flow is a measure of profitability that excludes the non-cash
+                        expenses of the income statement and includes spending on equipment and assets as well
                         as changes in working capital from the balance sheet.
                         \n https://www.investopedia.com/terms/f/freecashflow.asp'''
         min_fcf = st.number_input('Min Free Cash Flow',
@@ -389,9 +399,9 @@ with st.beta_container():
 
         min_value = int(data['Fundamental Figures']['Total Debt'].min())
         max_value = int(data['Fundamental Figures']['Total Debt'].max())
-        help = '''Total debt is calculated by adding up a company's liabilities, or debts, which are categorized 
-                  as short and long-term debt. Financial lenders or business leaders may look at a company's balance 
-                  sheet to factor in the debt ratio to make informed decisions about future loan options. 
+        help = '''Total debt is calculated by adding up a company's liabilities, or debts, which are categorized
+                  as short and long-term debt. Financial lenders or business leaders may look at a company's balance
+                  sheet to factor in the debt ratio to make informed decisions about future loan options.
                   They calculate the debt ratio by taking the total debt and dividing it by the total assets.
                   \n https://www.indeed.com/career-advice/career-development/how-to-calculate-total-debt#:~:text=Total%20debt%20is%20calculated%20by,decisions%20about%20future%20loan%20options.'''
         min_total_debt = st.number_input('Min Total Debt',
@@ -412,10 +422,10 @@ with st.beta_container():
                                          )
 
         bool = st.checkbox(
-            "Dividend Stocks", value=False, help='''A dividend is the distribution of some of a company's earnings to 
-                                                     a class of its shareholders, as determined by the company's board of 
-                                                     directors. General shareholders of dividend-paying companies are typically 
-                                                     eligible as long as they own the stock before the ex-dividend date. 
+            "Dividend Stocks", value=False, help='''A dividend is the distribution of some of a company's earnings to
+                                                     a class of its shareholders, as determined by the company's board of
+                                                     directors. General shareholders of dividend-paying companies are typically
+                                                     eligible as long as they own the stock before the ex-dividend date.
                                                      Dividends may be paid out as cash or in the form of additional stock.
                                                      \n https://www.investopedia.com/terms/d/dividend.asp''')
         if bool:
@@ -426,10 +436,10 @@ with st.beta_container():
 
         options = np.concatenate(
             [['All'], data['Fundamental Figures']['Pietroski F-Score'].dropna().sort_values().unique()])
-        f_score = st.selectbox('Pietroski F-Score', options=options, help='''Piotroski F-score is a number between 0 and 9 
-                                                                            which is used to assess strength of company's financial position. 
-                                                                            The score is used by financial investors in order to find the best 
-                                                                            value stocks (nine being the best). The score is named after Stanford 
+        f_score = st.selectbox('Pietroski F-Score', options=options, help='''Piotroski F-score is a number between 0 and 9
+                                                                            which is used to assess strength of company's financial position.
+                                                                            The score is used by financial investors in order to find the best
+                                                                            value stocks (nine being the best). The score is named after Stanford
                                                                             accounting professor Joseph Piotroski.
                                                                             \n https://en.wikipedia.org/wiki/Piotroski_F-score#:~:text=Piotroski%20F%2Dscore%20is%20a,Stanford%20accounting%20professor%20Joseph%20Piotroski.''')
 
@@ -500,7 +510,7 @@ with st.beta_container():
         'Undervalued Large Cap': si.get_undervalued_large_caps
     }
     st.markdown('''<p><small> Hover over the circle in the chart
-                   to see figures and ratios for each company. Reduce the number of tickers using 
+                   to see figures and ratios for each company. Reduce the number of tickers using
                    the preset dropdown below or the filters located in the sidebar.
                 </small></p>''', unsafe_allow_html=True)
 
@@ -565,37 +575,61 @@ with st.beta_container():
         c = stock_line_chart(df)
         st.altair_chart(c, use_container_width=True)
 
-#         # GROWTH CALCULATION
-#         st.subheader(
-#             'Machine Learning Valuation Over Time with Growth Estimate')
-#         st.markdown('Explanation Goes Here')
-#         # TODO
-#         # SLIDER TO MOVE GROWTH % UP OR DOWN
-#         # MULTIPLY GROWTH % BY THE FEATURES IN LIST
-#         # RUN THE FEATURES IN ML MODEL TO GET
-#         growth_df = data['Growth Estimates']
-# ###############################################################################
-#         # put in the right dataframes
-#         growth_df = growth_df.reindex(sales_growth_df.index)
-#         growth_df = growth_df.join(company_df).merge(
-#             industry_df,  left_on='IndustryId', right_index=True)  # .columns
-#         growth_df = growth_df[['Next 5 Years (per annum)', 'Industry']]
-#         growth_df['Growth'] = growth_df.groupby(
-#             'Industry').transform(lambda x: x.fillna(x.mean()))
-#         (growth_df['Growth']+1)**5
+        # GROWTH CALCULATION
+        st.markdown('''A considerable limitation in the Machine Learning Valuation 
+                       is that it does not equate for growth expectations.  Below you can apply your own
+                       growth assumptions for up to 10 years.''')
+        growth_estimate_default = data['Growth Estimates'].loc[ticker]['Growth']
 
-#         # COLUMNS TO UPDATE IN FEATURE (IF NEGATIVE LEAVE THE SAME FOR NOW)
-#         ['Cash, Cash Equivalents & Short Term Investments',
-#          'Net Cash from Operating Activities',
-#          'Net Income',
-#          'Income (Loss) from Continuing Operations',
-#          'Earnings Per Share, Basic',
-#          'Net Cash from Investing Activities',
-#          'Earnings Per Share, Diluted',
-#          'Pretax Income (Loss), Adj.',
-#          'Gross Profit',
-#          'Net Income (Common)']
-# ################################################################################
+        feature_cols = ['Cash, Cash Equivalents & Short Term Investments',
+                        'Net Cash from Operating Activities',
+                        'Net Income',
+                        'Income (Loss) from Continuing Operations',
+                        'Earnings Per Share, Basic',
+                        'Net Cash from Investing Activities',
+                        'Earnings Per Share, Diluted',
+                        'Pretax Income (Loss), Adj.',
+                        'Gross Profit',
+                        'Net Income (Common)']
+
+        input_growth, output_growth = st.beta_columns(2)
+        with input_growth:
+            help = ''' Enter the number of years of future growth.  
+                       5 & 10 years are common in Discounted Cash Flow'''
+            years = st.slider('Number of Years', 1, 10,
+                              value=5, help=help)
+            help = ''' Enter the annualized percent growth expected (i.e. 25%).  
+                       Default value uses Yahoo Growth Estimates'''
+            growth_input = st.text_input('Avg Growth % (per annum)',
+                                         value=f"{growth_estimate_default:.2%}", help=help)
+
+            try:
+                growth_input = float(growth_input.strip('%')) / 100
+            except:
+                st.info('Please enter a percentage i.e. 25%')
+
+        with output_growth:
+            try:
+                features = data['Features'][key].loc[[ticker]].copy()
+                features_growth = features.copy()
+                features_growth[feature_cols] = features_growth[feature_cols] * \
+                    (1+growth_input)**years
+
+                st.markdown(f'''<h4 align="center"> Machine Learning "Growth" Valuation </h4>
+                                <h3 align="center"><code>{models[key].predict(features)[0]:.2f}</code> 
+                                &#8594;
+                                <code>{models[key].predict(features_growth)[0]:.2f}</code></h3>
+                                <br>
+                                <p><small font-size=0.75em><cite>Note: The random forest algorithm used cannot extrapolate. 
+                                                                 If growth esimates push feature values outside the range seen by the model 
+                                                                 then the valuation will just be the highest valuation seen in the data. 
+                                                                 <a href ="http://freerangestats.info/blog/2016/12/10/extrapolation">
+                                                                 Link for more info. </a>
+                                                                 </cite></small></p>
+                                ''', unsafe_allow_html=True)
+            except:
+                st.error(
+                    'Oops...Something Went Wrong.')
 
         # ANALYST ESTIMATES
         if analyst_growth:
@@ -670,7 +704,7 @@ with st.beta_container():
             st.subheader('Prediction Explanation')
             st.markdown('''<p><small>The waterfall plot is designed to visually display how
                         the values of each feature moves the <code>average</code> stock value to the
-                        <code>predicted</code> stock value. Visit 
+                        <code>predicted</code> stock value. Visit
                         <a href="https://price-valuation-explainer.herokuapp.com/">Stock Valuation Explainer</a> for more detail.
                         </small></p>''', unsafe_allow_html=True)
 
