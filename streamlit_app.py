@@ -281,7 +281,7 @@ with st.beta_container():
     #### SUPPORT ####
     with st.sidebar.beta_expander("Support:", expanded=True):
         st.markdown(
-            f'''<p><small>You can support by <a href="https://www.buymeacoffee.com/gardnmi">
+            f'''<p><small>You can support by <a href="https://www.buymeacoffee.com/gardnmi" target="_blank">
             buying me a coffee</a>☕️</small></p>''', unsafe_allow_html=True)
 
     #### ABOUT ####
@@ -623,7 +623,7 @@ with st.beta_container():
                                 <p><small font-size=0.75em><cite>Note: The random forest algorithm used cannot extrapolate. 
                                                                  If growth esimates push feature values outside the range seen by the model 
                                                                  then the valuation will just be the highest valuation seen in the data. 
-                                                                 <a href ="http://freerangestats.info/blog/2016/12/10/extrapolation">
+                                                                 <a href ="http://freerangestats.info/blog/2016/12/10/extrapolation" target="_blank">
                                                                  Link for more info. </a>
                                                                  </cite></small></p>
                                 ''', unsafe_allow_html=True)
@@ -705,7 +705,7 @@ with st.beta_container():
             st.markdown('''<p><small>The waterfall plot is designed to visually display how
                         the values of each feature moves the <code>average</code> stock value to the
                         <code>predicted</code> stock value. Visit
-                        <a href="https://price-valuation-explainer.herokuapp.com/">Stock Valuation Explainer</a> for more detail.
+                        <a href="https://price-valuation-explainer.herokuapp.com/" target="_blank">Stock Valuation Explainer</a> for more detail.
                         </small></p>''', unsafe_allow_html=True)
 
             shap_values = models[f'{key} Explainer'](
@@ -767,7 +767,7 @@ with st.beta_container():
                 published = datetime.fromtimestamp(
                     mktime(published_parsed)).strftime("%m/%d/%Y")
                 st.markdown(
-                    f'''<h4><a href="{article['link']}">{article['title']} </a>
+                    f'''<h4><a href="{article['link']}" target="_blank">{article['title']} </a>
                     <span style="font-size:.80rem"> - Published: {published} </span></h4>
                         ''', unsafe_allow_html=True)
                 st.markdown(
