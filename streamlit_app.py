@@ -291,8 +291,8 @@ with st.beta_container():
     #### ABOUT ####
     with st.sidebar.beta_expander("About:", expanded=True):
         st.markdown(
-            f'''<p><small>Traditional valuation models such as DCF are a time consuming process
-            that requires a lot of assumptions as inputs. This project aims to simplify and generalize  stock valuation
+            f'''<p><small>Traditional valuation models such as DCF are time consuming and require assumption. 
+            This project aims to simplify the valuation of stocks
             using machine learning.  The predicted value, <code>Machine Learning Valuation</code>,
             uses the Trailing Twelve Month Fundamentals as features inputs</small></p>
             <p><small>Visit <a href="https://price-valuation-explainer.herokuapp.com/">Stock Valuation Explainer</a>
@@ -504,9 +504,8 @@ with st.beta_container():
         st.markdown(
             '- Initial Commit')
 
-
+#### Discovery ####
 if navigation == 'Discovery':
-    #### Discovery ####
     st.header('** Discovery: **')
 
     preset_functions = {
@@ -548,9 +547,8 @@ if navigation == 'Discovery':
     c = scatter_variance_chart(df)
     st.altair_chart(c, use_container_width=True)
 
-
+#### ANALYSIS ####
 if navigation == 'Analysis':
-    #### ANALYSIS ####
     st.header('** Analysis: **')
 
     # TICKER DROP DOWN

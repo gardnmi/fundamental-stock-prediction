@@ -98,7 +98,7 @@ def stock_line_chart(df):
         x='Date:T',
         y='Price:Q',
         color=alt.Color('category:N',
-                        legend=alt.Legend(orient='bottom'))
+                        legend=alt.Legend(orient='right'))
         # color='category:N'
     )
 
