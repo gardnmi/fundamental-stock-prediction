@@ -23,7 +23,7 @@ year_count = 0
 
 # TODO
 # Add Linked Brushing Scatter Plot https://altair-viz.github.io/gallery/scatter_linked_brush.html
-# Split App into Analysis and Discovery
+# Calculate growth only on positive values
 
 # Page Settings
 st.set_page_config(
@@ -291,7 +291,7 @@ with st.beta_container():
     #### ABOUT ####
     with st.sidebar.beta_expander("About:", expanded=True):
         st.markdown(
-            f'''<p><small>Traditional valuation models such as DCF are time consuming and require assumption. 
+            f'''<p><small>Traditional valuation models such as DCF are time consuming and require assumption.
             This project aims to simplify the valuation of stocks
             using machine learning.  The predicted value, <code>Machine Learning Valuation</code>,
             uses the Trailing Twelve Month Fundamentals as features inputs</small></p>
@@ -584,7 +584,7 @@ if navigation == 'Analysis':
         st.altair_chart(c, use_container_width=True)
 
         # GROWTH CALCULATION
-        st.markdown('''A considerable limitation in the Machine Learning Valuation 
+        st.markdown('''A considerable limitation in the Machine Learning Valuation
                        is that it does not equate for growth expectations.  Below you can apply your own
                        growth assumptions for up to 10 years.''')
         growth_estimate_default = data['Growth Estimates'].loc[ticker]['Growth']
@@ -602,7 +602,7 @@ if navigation == 'Analysis':
 
         input_growth, output_growth = st.beta_columns(2)
         with input_growth:
-            help = ''' Enter the number of years of future growth.  
+            help = ''' Enter the number of years of future growth.
                        5 & 10 years are common in Discounted Cash Flow'''
 
             years = st.slider('Number of Years', 1, 10,
@@ -610,38 +610,46 @@ if navigation == 'Analysis':
             # Create a Unique ID for each instance of the year slider
             year_count += 1
 
-            help = ''' Enter the annualized percent growth expected (i.e. 25%).  
+            help = ''' Enter the annualized percent growth expected (i.e. 25%).
                        Default value uses Yahoo Growth Estimates'''
             growth_input = st.text_input('Avg Growth % (per annum)',
                                          value=f"{growth_estimate_default:.2%}", help=help)
 
             try:
                 growth_input = float(growth_input.strip('%')) / 100
+                if growth_input < 0:
+                    if growth_input <= -1:
+                        growth_input = .000000001
+                    else:
+                        growth_input = (1-np.abs(growth_input)) ** years
+                else:
+                    growth_input = (1+growth_input) ** years
+
             except:
                 st.info('Please enter a percentage i.e. 25%')
 
         with output_growth:
-            try:
-                features = data['Features'][key].loc[[ticker]].copy()
-                features_growth = features.copy()
-                features_growth[feature_cols] = features_growth[feature_cols] * \
-                    (1+growth_input)**years
+            # try:
+            features = data['Features'][key].loc[[ticker]].copy()
+            features_growth = features.copy()
+            features_growth[features_growth.columns] = np.where(
+                features_growth > 0, features_growth * growth_input, features_growth)
 
-                st.markdown(f'''<h4 align="center"> Machine Learning "Growth" Valuation </h4>
-                                <h3 align="center"><code>{models[key].predict(features)[0]:.2f}</code> 
-                                &#8594;
-                                <code>{models[key].predict(features_growth)[0]:.2f}</code></h3>
-                                <br>
-                                <p><small font-size=0.75em><cite>Note: The random forest algorithm used cannot extrapolate. 
-                                                                 If growth esimates push feature values outside the range seen by the model 
-                                                                 then the valuation will just be the highest valuation seen in the data. 
-                                                                 <a href ="http://freerangestats.info/blog/2016/12/10/extrapolation" target="_blank">
-                                                                 Link for more info. </a>
-                                                                 </cite></small></p>
-                                ''', unsafe_allow_html=True)
-            except:
-                st.error(
-                    'Oops...Something Went Wrong.')
+            st.markdown(f'''<h4 align="center"> Machine Learning "Growth" Valuation </h4>
+                            <h3 align="center"><code>{models[key].predict(features)[0]:.2f}</code>
+                            &#8594;
+                            <code>{models[key].predict(features_growth)[0]:.2f}</code></h3>
+                            <br>
+                            <p><small font-size=0.75em><cite>Note: The random forest algorithm used cannot extrapolate.
+                                                                If growth esimates push feature values outside the range seen by the model
+                                                                then the valuation will just be the highest valuation seen in the data.
+                                                                <a href ="http://freerangestats.info/blog/2016/12/10/extrapolation" target="_blank">
+                                                                Link for more info. </a>
+                                                                </cite></small></p>
+                            ''', unsafe_allow_html=True)
+        # except:
+            # st.error(
+            #     'Oops...Something Went Wrong.')
 
         # ANALYST ESTIMATES
         if analyst_growth:
