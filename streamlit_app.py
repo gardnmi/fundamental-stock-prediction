@@ -19,7 +19,7 @@ from matplotlib.backends.backend_agg import RendererAgg
 DATA_DIR = pathlib.Path('./data')
 MODELS_DIR = pathlib.Path('./models')
 extractor = reticker.TickerExtractor()
-
+year_count = 0
 
 # TODO
 # Add Linked Brushing Scatter Plot https://altair-viz.github.io/gallery/scatter_linked_brush.html
@@ -209,6 +209,7 @@ def get_models():
 # LOAD DATA
 data = get_data()
 models = get_models()
+
 
 #### HEADER ####
 with st.beta_container():
@@ -605,8 +606,12 @@ if navigation == 'Analysis':
         with input_growth:
             help = ''' Enter the number of years of future growth.  
                        5 & 10 years are common in Discounted Cash Flow'''
+
             years = st.slider('Number of Years', 1, 10,
-                              value=5, help=help)
+                              value=5, help=help, key=year_count)
+            # Create a Unique ID for each instance of the year slider
+            year_count += 1
+
             help = ''' Enter the annualized percent growth expected (i.e. 25%).  
                        Default value uses Yahoo Growth Estimates'''
             growth_input = st.text_input('Avg Growth % (per annum)',
