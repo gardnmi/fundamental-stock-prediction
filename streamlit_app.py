@@ -23,6 +23,7 @@ extractor = reticker.TickerExtractor()
 
 # TODO
 # Add Linked Brushing Scatter Plot https://altair-viz.github.io/gallery/scatter_linked_brush.html
+# Split App into Analysis and Discovery
 
 # Page Settings
 st.set_page_config(
@@ -214,7 +215,7 @@ with st.beta_container():
 
     st.markdown('''
             <style>
-              .typewriter h4 {
+              .typewriter h1 {
                 width: auto;
                 display: inline-block;
                 overflow: hidden;
@@ -222,11 +223,11 @@ with st.beta_container():
                 white-space: nowrap;
                 margin: 0 auto;
                 padding: 0.5em 0px 0.5em;
-                letter-spacing: .15em;
+                letter-spacing: .10em;
                 animation: typing 1.5s steps(40, end),
                   blink-caret .75s step-end infinite;
                 background: #273746;
-                border-radius: 3px;
+                border-radius: 5px;
                 color: white;
               }
 
@@ -266,15 +267,17 @@ with st.beta_container():
               }
 
             </style>
-            <div>
-              <h1>Stock Valuation w/ Machine Learnimg</h1>
+            <div class="typewriter">
+              <h1> &nbsp;A Poor Man's Bloomberg Terminal</h1>
             </div>
             <div class="typewriter">
-              <h4> &nbsp; A poor man's bloomberg terminal</h4>
+              <h4>A.I. Driven Stock Valuation</h4>
             </div>
 
                    ''', unsafe_allow_html=True)
     st.markdown(f'>{quotes[np.random.randint(len(quotes)-1)]}')
+
+    navigation = st.selectbox('Site Navigation:', ['Analysis', 'Discovery'])
 
 #### SIDEBAR ####
 with st.beta_container():
@@ -304,182 +307,188 @@ with st.beta_container():
             <p><small>Use the preset filters to filter down the scatter plot
             or customize the filter using the filters below.</small></p>''', unsafe_allow_html=True)
 
-    #### FILTERS ####
-    with st.sidebar.beta_expander("Filters:", expanded=False):
-        st.markdown(
-            '''<p><small> Filters for the <code>Machine Learning Valuation</code> scatter plot.</small></p>''', unsafe_allow_html=True)
-        ticker_input = st.text_area(
-            'Input Ticker(s)', help='''Tickers can be entered in any format and will
-                                       be parsed correctly
-                                       \n i.e. "Has GLD/IAU bottomed yet?"
-                                       = ['GLD', 'IAU'] or "GLD $IAU" = ['GLD', 'IAU'].
-                                       \n Extraction done by https://pypi.org/project/reticker/
-                                      ''')
+    if navigation == 'Discovery':
+        #### FILTERS ####
+        with st.sidebar.beta_expander("Filters:", expanded=False):
+            st.markdown(
+                '''<p><small> Filters for the <code>Machine Learning Valuation</code> scatter plot.</small></p>''', unsafe_allow_html=True)
+            ticker_input = st.text_area(
+                'Input Ticker(s)', help='''Tickers can be entered in any format and will
+                                        be parsed correctly
+                                        \n i.e. "Has GLD/IAU bottomed yet?"
+                                        = ['GLD', 'IAU'] or "GLD $IAU" = ['GLD', 'IAU'].
+                                        \n Extraction done by https://pypi.org/project/reticker/
+                                        ''')
 
-        custom_tickers = extractor.extract(ticker_input)
+            custom_tickers = extractor.extract(ticker_input)
 
-        options = np.concatenate([['All'], data['Industry'].Sector.unique()])
-        sector = st.selectbox('Sector', options=options, help='''A stock market sector is a group of stocks that have a lot in
-                                                                 general with each other, usually because they are in similar industries.
-                                                                 There are 11 different stock market sectors, according to the most generally
-                                                                 used classification system: the Global Industry Classification Standard
-                                                                 (GICS)
-                                                                 \n https://www.investopedia.com/ask/answers/05/industrysector.asp''')
+            options = np.concatenate(
+                [['All'], data['Industry'].Sector.unique()])
+            sector = st.selectbox('Sector', options=options, help='''A stock market sector is a group of stocks that have a lot in
+                                                                    general with each other, usually because they are in similar industries.
+                                                                    There are 11 different stock market sectors, according to the most generally
+                                                                    used classification system: the Global Industry Classification Standard
+                                                                    (GICS)
+                                                                    \n https://www.investopedia.com/ask/answers/05/industrysector.asp''')
 
-        options = np.concatenate([['All'], data['Industry'].Industry.unique()])
-        industry = st.selectbox('Industry', options=options, help='''Industry refers to a specific group of companies that operate in a similar business sphere.
-                                                                     Essentially, industries are created by breaking down sectors into more defined groupings.
-                                                                     Therefore, these companies are divided into more specific groups than sectors. Each of the dozen
-                                                                     or so sectors will have a varying number of industries, but it can be in the hundreds.
-                                                                     \n https://www.investopedia.com/ask/answers/05/industrysector.asp''')
+            options = np.concatenate(
+                [['All'], data['Industry'].Industry.unique()])
+            industry = st.selectbox('Industry', options=options, help='''Industry refers to a specific group of companies that operate in a similar business sphere.
+                                                                        Essentially, industries are created by breaking down sectors into more defined groupings.
+                                                                        Therefore, these companies are divided into more specific groups than sectors. Each of the dozen
+                                                                        or so sectors will have a varying number of industries, but it can be in the hundreds.
+                                                                        \n https://www.investopedia.com/ask/answers/05/industrysector.asp''')
 
-        min_value = data['Current Predictions']['Close'].min()
-        max_value = data['Current Predictions']['Close'].max()
-        min_stock_price = st.number_input('Min Stock Price',
-                                          min_value=min_value,
-                                          max_value=max_value,
-                                          step=10.0,
-                                          value=min_value
-                                          )
-        max_stock_price = st.number_input('Max Stock Price',
-                                          min_value=min_value,
-                                          max_value=max_value,
-                                          step=10.0,
-                                          value=max_value
-                                          )
+            min_value = data['Current Predictions']['Close'].min()
+            max_value = data['Current Predictions']['Close'].max()
+            min_stock_price = st.number_input('Min Stock Price',
+                                              min_value=min_value,
+                                              max_value=max_value,
+                                              step=10.0,
+                                              value=min_value
+                                              )
+            max_stock_price = st.number_input('Max Stock Price',
+                                              min_value=min_value,
+                                              max_value=max_value,
+                                              step=10.0,
+                                              value=max_value
+                                              )
 
-        min_value = int(data['Share Ratio']['Market-Cap'].min())
-        max_value = int(data['Share Ratio']['Market-Cap'].max())
-        help = '''Market capitalization refers to the total dollar market value of a company's outstanding
-                            shares of stock. Generally referred to as "market cap," it is calculated by multiplying the
-                            total number of a company's outstanding shares by the current market price of one share.
-                            \n https://www.investopedia.com/terms/m/marketcapitalization.asp'''
+            min_value = int(data['Share Ratio']['Market-Cap'].min())
+            max_value = int(data['Share Ratio']['Market-Cap'].max())
+            help = '''Market capitalization refers to the total dollar market value of a company's outstanding
+                                shares of stock. Generally referred to as "market cap," it is calculated by multiplying the
+                                total number of a company's outstanding shares by the current market price of one share.
+                                \n https://www.investopedia.com/terms/m/marketcapitalization.asp'''
 
-        min_market_cap = st.number_input('Min Market Cap',
-                                         min_value=min_value,
-                                         max_value=max_value,
-                                         step=100_000,
-                                         value=min_value,
-                                         format='%d',
-                                         help=help
-                                         )
-        max_market_cap = st.number_input('Max Market Cap',
-                                         min_value=min_value,
-                                         max_value=max_value,
-                                         step=100_000,
-                                         value=max_value,
-                                         format='%d',
-                                         help=help
-                                         )
+            min_market_cap = st.number_input('Min Market Cap',
+                                             min_value=min_value,
+                                             max_value=max_value,
+                                             step=100_000,
+                                             value=min_value,
+                                             format='%d',
+                                             help=help
+                                             )
+            max_market_cap = st.number_input('Max Market Cap',
+                                             min_value=min_value,
+                                             max_value=max_value,
+                                             step=100_000,
+                                             value=max_value,
+                                             format='%d',
+                                             help=help
+                                             )
 
-        min_value = int(data['Fundamental Figures']['Free Cash Flow'].min())
-        max_value = int(data['Fundamental Figures']['Free Cash Flow'].max())
-        help = '''Free cash flow (FCF) represents the cash a company generates after accounting for
-                        cash outflows to support operations and maintain its capital assets. Unlike earnings
-                        or net income, free cash flow is a measure of profitability that excludes the non-cash
-                        expenses of the income statement and includes spending on equipment and assets as well
-                        as changes in working capital from the balance sheet.
-                        \n https://www.investopedia.com/terms/f/freecashflow.asp'''
-        min_fcf = st.number_input('Min Free Cash Flow',
-                                  min_value=min_value,
-                                  max_value=max_value,
-                                  step=100_000,
-                                  value=min_value,
-                                  format='%d',
-                                  help=help
-                                  )
-        max_fcf = st.number_input('Max Free Cash Flow',
-                                  min_value=min_value,
-                                  max_value=max_value,
-                                  step=100_000,
-                                  value=max_value,
-                                  format='%d',
-                                  help=help
-                                  )
+            min_value = int(data['Fundamental Figures']
+                            ['Free Cash Flow'].min())
+            max_value = int(data['Fundamental Figures']
+                            ['Free Cash Flow'].max())
+            help = '''Free cash flow (FCF) represents the cash a company generates after accounting for
+                            cash outflows to support operations and maintain its capital assets. Unlike earnings
+                            or net income, free cash flow is a measure of profitability that excludes the non-cash
+                            expenses of the income statement and includes spending on equipment and assets as well
+                            as changes in working capital from the balance sheet.
+                            \n https://www.investopedia.com/terms/f/freecashflow.asp'''
+            min_fcf = st.number_input('Min Free Cash Flow',
+                                      min_value=min_value,
+                                      max_value=max_value,
+                                      step=100_000,
+                                      value=min_value,
+                                      format='%d',
+                                      help=help
+                                      )
+            max_fcf = st.number_input('Max Free Cash Flow',
+                                      min_value=min_value,
+                                      max_value=max_value,
+                                      step=100_000,
+                                      value=max_value,
+                                      format='%d',
+                                      help=help
+                                      )
 
-        min_value = int(data['Fundamental Figures']['Total Debt'].min())
-        max_value = int(data['Fundamental Figures']['Total Debt'].max())
-        help = '''Total debt is calculated by adding up a company's liabilities, or debts, which are categorized
-                  as short and long-term debt. Financial lenders or business leaders may look at a company's balance
-                  sheet to factor in the debt ratio to make informed decisions about future loan options.
-                  They calculate the debt ratio by taking the total debt and dividing it by the total assets.
-                  \n https://www.indeed.com/career-advice/career-development/how-to-calculate-total-debt#:~:text=Total%20debt%20is%20calculated%20by,decisions%20about%20future%20loan%20options.'''
-        min_total_debt = st.number_input('Min Total Debt',
-                                         min_value=min_value,
-                                         max_value=max_value,
-                                         step=100_000,
-                                         value=min_value,
-                                         format='%d',
-                                         help=help
-                                         )
-        max_total_debt = st.number_input('Max Total Debt',
-                                         min_value=min_value,
-                                         max_value=max_value,
-                                         step=100_000,
-                                         value=max_value,
-                                         format='%d',
-                                         help=help
-                                         )
+            min_value = int(data['Fundamental Figures']['Total Debt'].min())
+            max_value = int(data['Fundamental Figures']['Total Debt'].max())
+            help = '''Total debt is calculated by adding up a company's liabilities, or debts, which are categorized
+                    as short and long-term debt. Financial lenders or business leaders may look at a company's balance
+                    sheet to factor in the debt ratio to make informed decisions about future loan options.
+                    They calculate the debt ratio by taking the total debt and dividing it by the total assets.
+                    \n https://www.indeed.com/career-advice/career-development/how-to-calculate-total-debt#:~:text=Total%20debt%20is%20calculated%20by,decisions%20about%20future%20loan%20options.'''
+            min_total_debt = st.number_input('Min Total Debt',
+                                             min_value=min_value,
+                                             max_value=max_value,
+                                             step=100_000,
+                                             value=min_value,
+                                             format='%d',
+                                             help=help
+                                             )
+            max_total_debt = st.number_input('Max Total Debt',
+                                             min_value=min_value,
+                                             max_value=max_value,
+                                             step=100_000,
+                                             value=max_value,
+                                             format='%d',
+                                             help=help
+                                             )
 
-        bool = st.checkbox(
-            "Dividend Stocks", value=False, help='''A dividend is the distribution of some of a company's earnings to
-                                                     a class of its shareholders, as determined by the company's board of
-                                                     directors. General shareholders of dividend-paying companies are typically
-                                                     eligible as long as they own the stock before the ex-dividend date.
-                                                     Dividends may be paid out as cash or in the form of additional stock.
-                                                     \n https://www.investopedia.com/terms/d/dividend.asp''')
-        if bool:
-            dividend_tickers = data['Fundamental Figures'][data['Fundamental Figures']['Dividends Per Share'].notnull(
-            )]['Ticker']
-        else:
-            dividend_tickers = False
+            bool = st.checkbox(
+                "Dividend Stocks", value=False, help='''A dividend is the distribution of some of a company's earnings to
+                                                        a class of its shareholders, as determined by the company's board of
+                                                        directors. General shareholders of dividend-paying companies are typically
+                                                        eligible as long as they own the stock before the ex-dividend date.
+                                                        Dividends may be paid out as cash or in the form of additional stock.
+                                                        \n https://www.investopedia.com/terms/d/dividend.asp''')
+            if bool:
+                dividend_tickers = data['Fundamental Figures'][data['Fundamental Figures']['Dividends Per Share'].notnull(
+                )]['Ticker']
+            else:
+                dividend_tickers = False
 
-        options = np.concatenate(
-            [['All'], data['Fundamental Figures']['Pietroski F-Score'].dropna().sort_values().unique()])
-        f_score = st.selectbox('Pietroski F-Score', options=options, help='''Piotroski F-score is a number between 0 and 9
-                                                                            which is used to assess strength of company's financial position.
-                                                                            The score is used by financial investors in order to find the best
-                                                                            value stocks (nine being the best). The score is named after Stanford
-                                                                            accounting professor Joseph Piotroski.
-                                                                            \n https://en.wikipedia.org/wiki/Piotroski_F-score#:~:text=Piotroski%20F%2Dscore%20is%20a,Stanford%20accounting%20professor%20Joseph%20Piotroski.''')
+            options = np.concatenate(
+                [['All'], data['Fundamental Figures']['Pietroski F-Score'].dropna().sort_values().unique()])
+            f_score = st.selectbox('Pietroski F-Score', options=options, help='''Piotroski F-score is a number between 0 and 9
+                                                                                which is used to assess strength of company's financial position.
+                                                                                The score is used by financial investors in order to find the best
+                                                                                value stocks (nine being the best). The score is named after Stanford
+                                                                                accounting professor Joseph Piotroski.
+                                                                                \n https://en.wikipedia.org/wiki/Piotroski_F-score#:~:text=Piotroski%20F%2Dscore%20is%20a,Stanford%20accounting%20professor%20Joseph%20Piotroski.''')
 
-        filters = {
-            'Sector': sector,
-            'Industry': industry,
-            'Stock Price': [min_stock_price, max_stock_price],
-            'Market Cap': [min_market_cap, max_market_cap],
-            'Free Cash Flow': [min_fcf, max_fcf],
-            'Total Debt': [min_total_debt, max_total_debt],
-            'Dividend': dividend_tickers,
-            'F-Score': f_score,
-            'Custom Tickers': custom_tickers
-        }
+            filters = {
+                'Sector': sector,
+                'Industry': industry,
+                'Stock Price': [min_stock_price, max_stock_price],
+                'Market Cap': [min_market_cap, max_market_cap],
+                'Free Cash Flow': [min_fcf, max_fcf],
+                'Total Debt': [min_total_debt, max_total_debt],
+                'Dividend': dividend_tickers,
+                'F-Score': f_score,
+                'Custom Tickers': custom_tickers
+            }
 
-    #### DISPLAY OPTIONS ####
-    with st.sidebar.beta_expander("Display Options:", expanded=False):
-        st.markdown(
-            f'''<p><small>Uncheck to remove section from <code>Analysis</code>. </small></p>''', unsafe_allow_html=True)
+    if navigation == 'Analysis':
+        #### DISPLAY OPTIONS ####
+        with st.sidebar.beta_expander("Display Options:", expanded=False):
+            st.markdown(
+                f'''<p><small>Uncheck to remove section from <code>Analysis</code>. </small></p>''', unsafe_allow_html=True)
 
-        company_info = st.checkbox(
-            'Company Info', value=True)
-        analyst_growth = st.checkbox(
-            'Analyst Growth Estimates', value=True)
-        financial_statements = st.checkbox(
-            'Financial Statements', value=True)
-        prediction_explanation = st.checkbox(
-            'Prediction Explanation', value=True)
-        similiar_stocks = st.checkbox(
-            'Similar Stocks', value=True)
-        news_feed = st.checkbox(
-            'News Feed', value=True)
-        feature_importance = st.checkbox(
-            'Feature Importance', value=True)
-        num_sim = st.slider('Number of Similar Stocks',
-                            1, 20, value=10, step=1,
-                            help='Number of Similar Stocks to Display in the Similar Stock Section')
-        num_news = st.slider('Number of News Articles',
-                             1, 10, value=5, step=1,
-                             help='Number of Articles to Display in the News Feed Section')
+            company_info = st.checkbox(
+                'Company Info', value=True)
+            analyst_growth = st.checkbox(
+                'Analyst Growth Estimates', value=True)
+            financial_statements = st.checkbox(
+                'Financial Statements', value=True)
+            prediction_explanation = st.checkbox(
+                'Prediction Explanation', value=True)
+            similiar_stocks = st.checkbox(
+                'Similar Stocks', value=True)
+            news_feed = st.checkbox(
+                'News Feed', value=True)
+            feature_importance = st.checkbox(
+                'Feature Importance', value=True)
+            num_sim = st.slider('Number of Similar Stocks',
+                                1, 20, value=10, step=1,
+                                help='Number of Similar Stocks to Display in the Similar Stock Section')
+            num_news = st.slider('Number of News Articles',
+                                 1, 10, value=5, step=1,
+                                 help='Number of Articles to Display in the News Feed Section')
 
     #### CONTACT ####
     with st.sidebar.beta_expander("Contact:", expanded=False):
@@ -495,9 +504,9 @@ with st.beta_container():
             '- Initial Commit')
 
 
-#### Machine Learning Valuation ####
-with st.beta_container():
-    st.header('** Machine Learning Valuation: **')
+if navigation == 'Discovery':
+    #### Discovery ####
+    st.header('** Discovery: **')
 
     preset_functions = {
         'All': False,
@@ -510,14 +519,14 @@ with st.beta_container():
         'Undervalued Large Cap': si.get_undervalued_large_caps
     }
     st.markdown('''<p><small> Hover over the circle in the chart
-                   to see figures and ratios for each company. Reduce the number of tickers using
-                   the preset dropdown below or the filters located in the sidebar.
+                to see figures and ratios for each company. Reduce the number of tickers using
+                the preset dropdown below or the filters located in the sidebar.
                 </small></p>''', unsafe_allow_html=True)
 
     presets = st.selectbox('Select a Filter Preset:',
                            options=['All', 'S&P500', 'DOW', 'NASDAQ',
                                     'Day Winners', 'Day Losers', 'Day Most Active',
-                                    'Undervalued Large Cap'])
+                                    'Undervalued Large Cap'], index=1)
 
     preset_tickers = preset_functions[presets]
 
@@ -539,8 +548,8 @@ with st.beta_container():
     st.altair_chart(c, use_container_width=True)
 
 
-#### ANALYSIS ####
-with st.beta_container():
+if navigation == 'Analysis':
+    #### ANALYSIS ####
     st.header('** Analysis: **')
 
     # TICKER DROP DOWN
@@ -773,23 +782,23 @@ with st.beta_container():
                 st.markdown(
                     f'''<p> <small> {article['summary']} </small> </p> ''', unsafe_allow_html=True)
 
-# Feature Importance
-if feature_importance:
-    with st.beta_container():
-        # https://github.com/slundberg/shap
-        shap_values = shap.TreeExplainer(
-            models['General'])(data['Features']['General'])
-        st.subheader('Feature Importance')
-        st.markdown(
-            ''' <p> <small> The relative importance of each <code> fundamental feature </code >
-            in the predicted stock price </small> </p>''', unsafe_allow_html=True)
+    # Feature Importance
+    if feature_importance:
+        with st.beta_container():
+            # https://github.com/slundberg/shap
+            shap_values = shap.TreeExplainer(
+                models['General'])(data['Features']['General'])
+            st.subheader('Feature Importance')
+            st.markdown(
+                ''' <p> <small> The relative importance of each <code> fundamental feature </code >
+                in the predicted stock price </small> </p>''', unsafe_allow_html=True)
 
-        _lock = RendererAgg.lock
-        with _lock:
-            shap.plots.bar(shap_values, max_display=15)
-            plt.xlabel("Average Absolute Feature Price Movement")
-            st.set_option('deprecation.showPyplotGlobalUse', False)
-            st.pyplot()
+            _lock = RendererAgg.lock
+            with _lock:
+                shap.plots.bar(shap_values, max_display=15)
+                plt.xlabel("Average Absolute Feature Price Movement")
+                st.set_option('deprecation.showPyplotGlobalUse', False)
+                st.pyplot()
 
 
 st.markdown("<div align='center'><br>"
