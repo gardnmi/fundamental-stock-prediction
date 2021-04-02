@@ -19,7 +19,7 @@ def train(df, winsor_quantile, model_name, feature_name, param, custom_filter=No
         1) == df.index.get_level_values(1).max()]
 
     if custom_filter:
-        tickers = model_df.reset_index()[TICKER].unique()
+        tickers = model_df.reset_index()['Ticker'].unique()
         tickers = tickers[np.in1d(tickers, custom_filter)]
 
         model_df = model_df.loc[tickers]
