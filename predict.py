@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import pickle
 import simfin as sf
 import shap
@@ -10,12 +11,18 @@ MODELS_DIR = pathlib.Path('./models')
 DATA_DIR = pathlib.Path('./data')
 
 
-def train(df, winsor_quantile, model_name, feature_name, param):
+def train(df, winsor_quantile, model_name, feature_name, param, custom_filter=None):
     df = df.copy()
 
     # Filter Dataset to current Stock Prices Only
     model_df = df[df.index.get_level_values(
         1) == df.index.get_level_values(1).max()]
+
+    if custom_filter:
+        tickers = model_df.reset_index()[TICKER].unique()
+        tickers = tickers[np.in1d(tickers, custom_filter)]
+
+        model_df = model_df.loc[tickers]
 
     # Winsorize the data to even out the distribution
     model_df = sf.winsorize(model_df, clip=True, columns=[

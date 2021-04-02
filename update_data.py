@@ -5,6 +5,7 @@ import pathlib
 import os
 from dotenv import load_dotenv
 from predict import train, predict, predict_similiar
+import yahoo_fin.stock_info as si
 
 load_dotenv()
 SIMFIN_API_KEY = os.getenv('SIMFIN_API_KEY', 'free')
@@ -30,7 +31,8 @@ general_model = train(general_df,
                                  subsample=.5,
                                  colsample_bylevel=0.7,
                                  colsample_bytree=0.7,
-                                 n_estimators=200))
+                                 n_estimators=200),
+                      custom_filter=si.tickers_nasdaq())
 
 banks_model = train(banks_df,
                     winsor_quantile=0.05,

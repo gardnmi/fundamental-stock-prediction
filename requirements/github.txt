@@ -6,3 +6,4 @@ simfin==0.8.1
 xgboost==1.3.3
 category-encoders==2.2.2
 yahoo-fin==0.8.7
+evalml==0.21.0
